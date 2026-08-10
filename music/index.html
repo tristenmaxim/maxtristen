@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Music Player</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📻</text></svg>">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="player-container">
+        <p id="start-btn" class="disabled">start</p>
+        <div id="player-controls" class="hidden">
+            <div id="timer-display">00:00</div>
+            <div id="track-info">
+                <p id="track-display">--</p>
+            </div>
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="controls">
+                <button id="prev-btn">Prev</button>
+                <button id="play-pause-btn">Play</button>
+                <button id="next-btn">Next</button>
+                <button id="tracklist-toggle">Tracks</button>
+            </div>
+            <div id="audio-controls">
+                <button id="mute-btn">🔊</button>
+                <div id="volume-slider-container">
+                    <input type="range" id="volume-slider" min="0" max="100" value="100" title="Volume">
+                    <span id="volume-display">100%</span>
+                </div>
+            </div>
+            <div id="tracklist-container" class="hidden">
+                <div id="tracklist-header">
+                    <span id="track-count">--</span>
+                    <button id="shuffle-toggle" class="shuffle-btn">🔀 Shuffle: OFF</button>
+                </div>
+                <div id="tracklist" class="tracklist-scrollable">
+                    <!-- Tracks will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- YouTube Player will be inserted here -->
+    <div id="youtube-player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-size: 16px; 
+}
+
+#player-container {
+    max-width: 40em;
+    width: 100%;
+    padding: 1em;
+    text-align: center;
+}
+
+#start-btn {
+    font-size: 10rem;
+    font-weight: bold;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    color: #0000EE;
+    text-decoration: underline;
+}
+
+#start-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+    color: #999;
+}
+
+#timer-display {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 1em;
+    color: black;
+}
+
+#track-display {
+    /* This will now inherit the body font-size */
+}
+
+#logo a {
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#navigation a {
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+#progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background-color: #eee;
+    cursor: pointer;
+}
+
+#progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: #333;
+}
+
+#controls {
+    margin-top: 2em;
+}
+
+#audio-controls {
+    margin-top: 1.5em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
+}
+
+#volume-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+#volume-slider {
+    width: 120px;
+    height: 6px;
+    background-color: #ddd;
+    outline: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #333;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.15s ease;
+}
+
+#volume-slider::-webkit-slider-thumb:hover {
+    background: #555;
+}
+
+#volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #333;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+    transition: background 0.15s ease;
+}
+
+#volume-slider::-moz-range-thumb:hover {
+    background: #555;
+}
+
+#volume-display {
+    font-size: 12px;
+    color: #666;
+    min-width: 35px;
+    text-align: left;
+}
+
+#mute-btn {
+    min-width: 40px;
+    font-size: 16px;
+    padding: 0.4em;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+}
+
+#mute-btn.muted {
+    background-color: #ff6b6b;
+    color: white;
+    border-color: #ff5252;
+}
+
+#mute-btn.muted:hover {
+    background-color: #ff5252;
+}
+
+
+
+.hidden {
+    display: none;
+}
+
+#tracklist-container {
+    margin-top: 2em;
+    max-width: 100%;
+}
+
+#tracklist-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 1em;
+    text-align: center;
+    color: black;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+}
+
+/* Button styles - consistent with other buttons */
+button {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.5em 1em;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+button:hover {
+    background-color: #e9e9e9;
+    border-color: #999;
+}
+
+button:active {
+    background-color: #d9d9d9;
+    transform: translateY(1px);
+}
+
+.shuffle-btn {
+    font-size: 12px;
+    padding: 0.4em 0.8em;
+    white-space: nowrap;
+}
+
+.shuffle-btn.active {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
+
+.shuffle-btn.active:hover {
+    background-color: #45a049;
+}
+
+.tracklist-scrollable {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background: white;
+}
+
+.track-item {
+    padding: 0.5em;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.track-item:hover {
+    background-color: #f5f5f5;
+}
+
+.track-item.current {
+    background-color: #e6f3ff;
+    font-weight: bold;
+}
+
+.track-item:last-child {
+    border-bottom: none;
+}
+
+.track-title {
+    color: black;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.track-channel {
+    color: #666;
+    font-size: 12px;
+}

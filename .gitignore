@@ -1,0 +1,18 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Secrets — real values live only on the server, deployed manually
+.env
+.env.local
+
+# Runtime data
+downloads/
+*.log
+
+# OS
+.DS_Store

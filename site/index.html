@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vidwizr</title>
+  <style>
+    :root {
+      --bg: #0c0e10;
+      --card: #16191c;
+      --border: #262b30;
+      --text: #e8e9ea;
+      --muted: #8b9198;
+      --accent: #e8e9ea;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h1 {
+      font-size: 15px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      width: 100%;
+      max-width: 760px;
+    }
+    a.card {
+      display: block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 20px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    a.card:hover {
+      border-color: #454c53;
+      transform: translateY(-1px);
+    }
+    .card .icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .card .name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card .desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #4a5157;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>vidwizr</h1>
+  </header>
+  <div class="grid">
+    <a class="card" href="music/">
+      <span class="icon">📻</span>
+      <span class="name">Music</span>
+      <span class="desc">Фоновый плеер поверх YouTube-плейлиста</span>
+    </a>
+    <a class="card" href="photo/">
+      <span class="icon">🖼️</span>
+      <span class="name">Photo</span>
+      <span class="desc">AI-обработка изображений</span>
+    </a>
+    <a class="card" href="downloader/">
+      <span class="icon">⬇️</span>
+      <span class="name">Downloader</span>
+      <span class="desc">Скачать видео с YouTube, TikTok, Instagram</span>
+    </a>
+  </div>
+  <footer>146.103.109.188:8090</footer>
+</body>
+</html>

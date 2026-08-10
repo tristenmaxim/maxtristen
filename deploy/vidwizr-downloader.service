@@ -1,0 +1,14 @@
+[Unit]
+Description=vidwizr-service: downloader (yt-dlp video downloader)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/vidwizr-service/downloader/backend
+Environment=PORT=8003
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

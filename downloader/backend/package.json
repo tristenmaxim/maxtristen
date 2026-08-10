@@ -1,0 +1,21 @@
+{
+  "name": "download-video-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-compression": "^1.0.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
