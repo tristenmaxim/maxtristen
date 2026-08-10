@@ -38,7 +38,6 @@ async function handleDownload() {
   terminalOutput.classList.remove('hidden');
   downloadButton.disabled = true;
   downloadButton.classList.add('btn-disabled');
-  downloadButton.classList.remove('bg-white', 'hover:bg-gray-300');
   
   try {
     // Start download
@@ -136,7 +135,6 @@ function resetUI() {
   terminalOutput.classList.add('hidden');
   downloadButton.disabled = false;
   downloadButton.classList.remove('btn-disabled');
-  downloadButton.classList.add('bg-white', 'hover:bg-gray-300');
   currentVideoId = null;
   urlInput.value = '';
   

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = form.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.textContent;
     const fileInput = document.getElementById('file-upload');
-    const dropZone = form.querySelector('.border-dashed');
+    const dropZone = form.querySelector('.drop-zone');
     let originalImageUrl = null;
     
     // Image constraints
@@ -65,23 +65,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create new message element
         const msgDiv = document.createElement('div');
-        msgDiv.className = `validation-message mt-4 p-3 rounded-lg text-sm ${
-            isError ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-        }`;
+        msgDiv.className = `validation-message${isError ? '' : ' warn'}`;
         msgDiv.innerHTML = `
-            <div class="flex items-start">
-                <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    ${isError ? 
-                        '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>' :
-                        '<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>'
-                    }
-                </svg>
-                <div>${message}</div>
-            </div>
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                ${isError ?
+                    '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>' :
+                    '<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>'
+                }
+            </svg>
+            <div>${message}</div>
         `;
-        
+
         // Insert after the file input area
-        const uploadArea = form.querySelector('.border-dashed').parentElement;
+        const uploadArea = form.querySelector('.drop-zone').parentElement;
         uploadArea.insertAdjacentElement('afterend', msgDiv);
         
         // Auto-remove warning messages after 10 seconds
@@ -114,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show loading state
         submitButton.disabled = true;
-        submitButton.innerHTML = 'Обработка... <span class="loading"></span>';
+        submitButton.innerHTML = 'Обработка... <span class="spinner"></span>';
 
         const resultDiv = document.getElementById('result');
         const resultsGrid = document.getElementById('resultsGrid');
@@ -132,17 +128,17 @@ document.addEventListener('DOMContentLoaded', function() {
             originalImagesGrid.innerHTML = '';
             window.originalImages.forEach((imgUrl, idx) => {
                 const imgDiv = document.createElement('div');
-                imgDiv.className = 'relative bg-white rounded-lg shadow-sm overflow-hidden';
+                imgDiv.className = 'thumb';
                 imgDiv.innerHTML = `
-                    <img src="${imgUrl}" class="w-full h-20 object-cover" />
-                    <p class="text-xs text-gray-600 p-1 text-center">#${idx + 1}</p>
+                    <img src="${imgUrl}" />
+                    <p class="thumb-caption">#${idx + 1}</p>
                 `;
                 originalImagesGrid.appendChild(imgDiv);
             });
 
             // Generate multiple variants
             for (let variantIdx = 0; variantIdx < numVariants; variantIdx++) {
-                submitButton.innerHTML = `Генерация варианта ${variantIdx + 1} из ${numVariants}... <span class="loading"></span>`;
+                submitButton.innerHTML = `Генерация варианта ${variantIdx + 1} из ${numVariants}... <span class="spinner"></span>`;
 
                 // Create FormData for this variant
                 const formData = new FormData();
@@ -184,15 +180,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Add result to grid
                 const resultCard = document.createElement('div');
-                resultCard.className = 'bg-white rounded-lg shadow-md p-4';
+                resultCard.className = 'result-card';
                 resultCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <p class="text-sm font-medium text-gray-700">Вариант ${variantIdx + 1}</p>
-                        <span class="text-xs text-green-600">✓ Готово</span>
+                    <div class="result-card-head">
+                        <p>Вариант ${variantIdx + 1}</p>
+                        <span class="status">✓ Готово</span>
                     </div>
-                    <img src="${imageUrl}" class="w-full rounded-lg mb-3" />
-                    <a href="${imageUrl}" download="variant_${variantIdx + 1}.png"
-                       class="block text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <img src="${imageUrl}" />
+                    <a href="${imageUrl}" download="variant_${variantIdx + 1}.png" class="result-download">
                         Скачать
                     </a>
                 `;
@@ -279,11 +274,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const thumbnailDiv = document.createElement('div');
-                thumbnailDiv.className = 'relative bg-white rounded-lg shadow-sm overflow-hidden';
+                thumbnailDiv.className = 'thumb';
                 thumbnailDiv.innerHTML = `
-                    <img src="${e.target.result}" class="w-full h-24 object-cover" />
-                    <p class="text-xs text-gray-600 p-1 truncate" title="${file.name}">${file.name}</p>
-                    <p class="text-xs text-gray-400 px-1 pb-1">${(file.size / 1024 / 1024).toFixed(2)}MB</p>
+                    <img src="${e.target.result}" />
+                    <p class="thumb-caption" title="${file.name}">${file.name}</p>
+                    <p class="thumb-size">${(file.size / 1024 / 1024).toFixed(2)}MB</p>
                 `;
                 previewGallery.appendChild(thumbnailDiv);
                 window.originalImages.push(e.target.result);
@@ -318,11 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function highlight(e) {
-        dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        dropZone.classList.add('drag-active');
     }
-    
+
     function unhighlight(e) {
-        dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        dropZone.classList.remove('drag-active');
     }
     
     dropZone.addEventListener('drop', handleDrop, false);

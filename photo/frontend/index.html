@@ -3,191 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сервис обработки изображений - AI-помощник</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Photo — vidwizr</title>
     <link href="assets/styles.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold mb-2">Сервис обработки изображений</h1>
-            <p class="text-gray-600">AI-инструмент для обработки ваших изображений</p>
-        </div>
-        
-        <form id="uploadForm" class="space-y-6 max-w-2xl mx-auto">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Загрузить изображение</label>
-                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600">
-                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Выбрать файлы</span>
-                                <input id="file-upload" name="file" type="file" accept="image/*" class="sr-only" required multiple>
-                            </label>
-                            <p class="pl-1">или перетащите сюда</p>
-                        </div>
-                        <p class="text-xs text-gray-500">PNG, JPG, WEBP, GIF до 20MB (максимум 20 файлов)</p>
-                        <p class="text-xs text-gray-400 mt-1">Можно выбрать несколько изображений для обработки</p>
-                    </div>
+<body>
+    <a href="../" class="back-link">← vidwizr</a>
+    <div class="page">
+        <header class="page-head">
+            <h1>Photo</h1>
+            <p class="page-sub">AI-обработка изображений: смена фона, освещение, ретушь — по текстовой инструкции</p>
+        </header>
+
+        <form id="uploadForm">
+            <div class="field">
+                <label class="field-label">Загрузить изображение</label>
+                <div class="drop-zone">
+                    <svg class="drop-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <label for="file-upload" class="drop-cta">
+                        <span class="drop-cta-link">Выбрать файлы</span>
+                        <input id="file-upload" name="file" type="file" accept="image/*" class="sr-only" required multiple>
+                        <span> или перетащите сюда</span>
+                    </label>
+                    <p class="drop-hint">PNG, JPG, WEBP, GIF до 20MB (максимум 20 файлов)</p>
                 </div>
-                <div id="preview" class="mt-4 hidden">
-                    <p class="text-sm font-medium text-gray-700 mb-2">Выбрано файлов: <span id="fileCount" class="text-blue-600">0</span></p>
-                    <div id="previewGallery" class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
-                        <!-- Thumbnails will be added here -->
-                    </div>
+                <div id="preview" class="preview hidden">
+                    <p class="field-hint">Выбрано файлов: <span id="fileCount">0</span></p>
+                    <div id="previewGallery" class="thumb-grid"></div>
                 </div>
-            </div>
-            
-            <div>
-                <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2">
-                    Инструкции по обработке (необязательно)
-                </label>
-                <textarea
-                    id="prompt"
-                    name="prompt"
-                    rows="3"
-                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3"
-                    placeholder="например: 'Сделать белый фон', 'Добавить мягкие тени', 'Улучшить освещение', 'Убрать лишние элементы'..."
-                ></textarea>
-                <p class="mt-1 text-sm text-gray-500">Опишите, как вы хотите обработать изображение.</p>
             </div>
 
-            <!-- Model selection -->
-            <div>
-                <label for="model" class="block text-sm font-medium text-gray-700 mb-2">
-                    Модель для генерации
-                </label>
-                <select
-                    id="model"
-                    name="model"
-                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 bg-white"
-                >
+            <div class="field">
+                <label for="prompt" class="field-label">Инструкции по обработке (необязательно)</label>
+                <textarea id="prompt" name="prompt" rows="3" class="input"
+                    placeholder="например: 'Сделать белый фон', 'Добавить мягкие тени', 'Улучшить освещение', 'Убрать лишние элементы'..."></textarea>
+            </div>
+
+            <div class="field">
+                <label for="model" class="field-label">Модель для генерации</label>
+                <select id="model" name="model" class="input">
                     <optgroup label="Google Models">
-                        <option value="gemini-3-pro">Google Gemini 3 Pro Image (Самая продвинутая от Google)</option>
-                        <option value="gemini-2.5-flash">Google Gemini 2.5 Flash Image (Быстрая)</option>
-                        <option value="gemini-2.5-flash-preview">Google Gemini 2.5 Flash Preview - "Nano Banana"</option>
+                        <option value="gemini-3-pro">Google Gemini 3 Pro Image (самая продвинутая от Google)</option>
+                        <option value="gemini-2.5-flash">Google Gemini 2.5 Flash Image (быстрая)</option>
+                        <option value="gemini-2.5-flash-preview">Google Gemini 2.5 Flash Preview — "Nano Banana"</option>
                     </optgroup>
                     <optgroup label="OpenAI Models">
-                        <option value="gpt-5-mini" selected>OpenAI GPT-5 Image Mini (Рекомендуется, быстрая)</option>
-                        <option value="gpt-5">OpenAI GPT-5 Image (Самая продвинутая от OpenAI)</option>
+                        <option value="gpt-5-mini" selected>OpenAI GPT-5 Image Mini (рекомендуется, быстрая)</option>
+                        <option value="gpt-5">OpenAI GPT-5 Image (самая продвинутая от OpenAI)</option>
                     </optgroup>
                 </select>
-                <p class="mt-1 text-sm text-gray-500">Выберите AI модель для обработки изображения. GPT-5 Mini - оптимальный баланс скорости и качества.</p>
             </div>
 
-            <!-- Variants counter -->
-            <div>
-                <label for="variants" class="block text-sm font-medium text-gray-700 mb-2">
-                    Количество вариантов
-                </label>
-                <select
-                    id="variants"
-                    name="variants"
-                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 bg-white"
-                >
+            <div class="field">
+                <label for="variants" class="field-label">Количество вариантов</label>
+                <select id="variants" name="variants" class="input">
                     <option value="1" selected>1 вариант</option>
                     <option value="2">2 варианта</option>
                     <option value="3">3 варианта</option>
                     <option value="4">4 варианта</option>
                     <option value="5">5 вариантов</option>
                 </select>
-                <p class="mt-1 text-sm text-gray-500">Сколько разных версий результата сгенерировать. Больше вариантов = дольше обработка и выше стоимость.</p>
             </div>
 
-            <!-- Size selection -->
-            <div>
-                <span class="block text-sm font-medium text-gray-700 mb-2">Размер изображения</span>
-                <div class="flex flex-wrap gap-4">
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="size" value="1024x1024" class="form-radio text-blue-600" checked>
-                        <span class="ml-2">1024x1024 (квадрат)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="size" value="1536x1024" class="form-radio text-blue-600">
-                        <span class="ml-2">1536x1024 (ландшафт)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="size" value="1024x1536" class="form-radio text-blue-600">
-                        <span class="ml-2">1024x1536 (портрет)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="size" value="auto" class="form-radio text-blue-600">
-                        <span class="ml-2">Авто</span>
-                    </label>
+            <div class="field">
+                <span class="field-label">Размер изображения</span>
+                <div class="radio-row">
+                    <label class="radio-option"><input type="radio" name="size" value="1024x1024" checked><span>1024×1024</span></label>
+                    <label class="radio-option"><input type="radio" name="size" value="1536x1024"><span>1536×1024</span></label>
+                    <label class="radio-option"><input type="radio" name="size" value="1024x1536"><span>1024×1536</span></label>
+                    <label class="radio-option"><input type="radio" name="size" value="auto"><span>Авто</span></label>
                 </div>
             </div>
 
-            <!-- Quality selection -->
-            <div>
-                <span class="block text-sm font-medium text-gray-700 mb-2">Качество изображения</span>
-                <div class="flex flex-wrap gap-4">
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="quality" value="low" class="form-radio text-blue-600">
-                        <span class="ml-2">Низкое</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="quality" value="medium" class="form-radio text-blue-600" checked>
-                        <span class="ml-2">Среднее</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="quality" value="high" class="form-radio text-blue-600">
-                        <span class="ml-2">Высокое</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="quality" value="auto" class="form-radio text-blue-600">
-                        <span class="ml-2">Авто</span>
-                    </label>
+            <div class="field">
+                <span class="field-label">Качество изображения</span>
+                <div class="radio-row">
+                    <label class="radio-option"><input type="radio" name="quality" value="low"><span>Низкое</span></label>
+                    <label class="radio-option"><input type="radio" name="quality" value="medium" checked><span>Среднее</span></label>
+                    <label class="radio-option"><input type="radio" name="quality" value="high"><span>Высокое</span></label>
+                    <label class="radio-option"><input type="radio" name="quality" value="auto"><span>Авто</span></label>
                 </div>
             </div>
-            
-            <div class="text-center">
-                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    Обработать изображение
-                </button>
+
+            <div class="submit-row">
+                <button type="submit" class="btn-primary">Обработать изображение</button>
             </div>
         </form>
-        
-        <div class="mt-6 max-w-2xl mx-auto">
-            <details class="bg-blue-50 rounded-lg p-4">
-                <summary class="cursor-pointer text-sm font-medium text-blue-900">Требования к изображениям и советы</summary>
-                <div class="mt-2 text-sm text-blue-800 space-y-1">
-                    <p>• <strong>Поддерживаемые форматы:</strong> JPEG, PNG, WebP, GIF</p>
-                    <p>• <strong>Максимальный размер файла:</strong> 20MB</p>
-                    <p>• <strong>Рекомендуемые размеры:</strong> 1024x1024 пикселей для лучших результатов</p>
-                    <p>• <strong>Автоматическая обработка:</strong> Большие изображения будут автоматически уменьшены</p>
-                    <p>• <strong>Советы:</strong> Загружайте четкие фотографии с хорошим освещением для оптимальной обработки</p>
-                </div>
-            </details>
-        </div>
-        
-        <div id="result" class="mt-8 hidden max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Результаты обработки</h2>
-                <button id="downloadAllBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Скачать все
-                </button>
-            </div>
 
-            <!-- Original images -->
-            <div class="mb-8">
-                <p class="text-sm font-medium text-gray-700 mb-3">Входные изображения:</p>
-                <div id="originalImagesGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <!-- Original images will be added here -->
-                </div>
-            </div>
+        <details class="tips">
+            <summary>Требования к изображениям и советы</summary>
+            <ul>
+                <li>Поддерживаемые форматы: JPEG, PNG, WebP, GIF</li>
+                <li>Максимальный размер файла: 20MB</li>
+                <li>Рекомендуемые размеры: 1024×1024 для лучших результатов</li>
+                <li>Большие изображения будут автоматически уменьшены</li>
+            </ul>
+        </details>
 
-            <!-- Generated variants -->
-            <div>
-                <p class="text-sm font-medium text-gray-700 mb-3">Сгенерированные варианты:</p>
-                <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Results will be added here -->
-                </div>
+        <div id="result" class="results hidden">
+            <div class="results-head">
+                <h2>Результаты обработки</h2>
+                <button id="downloadAllBtn" class="btn-secondary">Скачать все</button>
+            </div>
+            <div class="results-block">
+                <p class="field-hint">Входные изображения:</p>
+                <div id="originalImagesGrid" class="thumb-grid thumb-grid-small"></div>
+            </div>
+            <div class="results-block">
+                <p class="field-hint">Сгенерированные варианты:</p>
+                <div id="resultsGrid" class="results-grid"></div>
             </div>
         </div>
     </div>
     <script src="assets/app.js"></script>
 </body>
-</html> 
+</html>
