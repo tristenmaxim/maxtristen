@@ -27,18 +27,19 @@ async function handleDownload() {
   errorMessage.textContent = '';
   errorMessage.classList.add('hidden');
   progressText.textContent = 'Starting download... wait a min';
-  
+
   const url = urlInput.value.trim();
   if (!url) {
     showError('ENTER A URL FIRST');
     return;
   }
-  
+
   // Show terminal output, disable button
   terminalOutput.classList.remove('hidden');
   downloadButton.disabled = true;
   downloadButton.classList.add('btn-disabled');
-  
+  downloadButton.classList.remove('bg-white', 'hover:bg-gray-300');
+
   try {
     // Start download
     const res = await fetch('download', {
@@ -46,21 +47,21 @@ async function handleDownload() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
-    
+
     if (!res.ok) {
       throw new Error(await res.text() || 'Download failed');
     }
-    
+
     const data = await res.json();
     currentVideoId = data.videoId;
-    
+
     // Reset polling configuration
     POLL_CONFIG.currentInterval = POLL_CONFIG.initialInterval;
-    
+
     // Start polling with initial interval
     if (pollInterval) clearInterval(pollInterval);
     if (pollTimeoutId) clearTimeout(pollTimeoutId);
-    
+
     checkProgress();
   } catch (err) {
     console.error('Error starting download:', err);
@@ -71,7 +72,7 @@ async function handleDownload() {
 
 async function checkProgress() {
   if (!currentVideoId) return;
-  
+
   try {
     const res = await fetch(`progress/${currentVideoId}`);
     if (!res.ok) {
@@ -79,16 +80,16 @@ async function checkProgress() {
       scheduleNextPoll();
       return;
     }
-    
+
     const data = await res.json();
-    
+
     if (data.message) {
       progressText.textContent = data.message;
     }
-    
+
     if (data.status === 'complete') {
       progressText.textContent = '100% complete - Starting download...';
-      
+
       // Download the file using a temporary link element
       const downloadLink = document.createElement('a');
       downloadLink.href = `download/${currentVideoId}`;
@@ -96,7 +97,7 @@ async function checkProgress() {
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
-      
+
       // Reset UI after a delay
       setTimeout(resetUI, 3000);
     } else if (data.status === 'error') {
@@ -114,10 +115,10 @@ async function checkProgress() {
 
 function scheduleNextPoll() {
   if (pollTimeoutId) clearTimeout(pollTimeoutId);
-  
+
   pollTimeoutId = setTimeout(() => {
     checkProgress();
-    
+
     // Increase polling interval for future polls (exponential backoff)
     POLL_CONFIG.currentInterval = Math.min(
       POLL_CONFIG.currentInterval * POLL_CONFIG.backoffFactor,
@@ -135,9 +136,10 @@ function resetUI() {
   terminalOutput.classList.add('hidden');
   downloadButton.disabled = false;
   downloadButton.classList.remove('btn-disabled');
+  downloadButton.classList.add('bg-white', 'hover:bg-gray-300');
   currentVideoId = null;
   urlInput.value = '';
-  
+
   // Clear all timers
   if (pollInterval) {
     clearInterval(pollInterval);
@@ -147,4 +149,4 @@ function resetUI() {
     clearTimeout(pollTimeoutId);
     pollTimeoutId = null;
   }
-} 
+}

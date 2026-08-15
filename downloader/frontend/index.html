@@ -1,34 +1,50 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Downloader — vidwizr</title>
+    <title>Video Tool</title>
+    <!-- Preconnect to CDN -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <!-- Load Tailwind asynchronously -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <!-- External CSS with long cache time -->
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
-    <a href="../" class="back-link">← vidwizr</a>
-    <div class="page">
-      <h1>Video Downloader</h1>
-      <p class="page-sub">YouTube · TikTok · Instagram</p>
+    <div class="h-screen flex flex-col items-center justify-center p-4">
+      <h1 class="text-4xl md:text-5xl mb-4 pb-2 border-b-4 border-white">Youtube TikTok Instagram Video Downloader</h1>
 
-      <div class="form">
-        <input type="text" id="url-input" placeholder="Вставь ссылку сюда" class="url-input" />
+      <div class="w-full max-w-3xl flex-1 flex flex-col justify-center max-h-[70vh]">
+        <div class="space-y-4 md:space-y-6">
+          <input
+            type="text"
+            id="url-input"
+            placeholder="PASTE URL HERE"
+            class="w-full text-xl md:text-2xl bg-black border-2 border-white p-2 md:p-3 rounded"
+          />
 
-        <div id="button-container">
-          <button id="download-button" class="btn-primary">Скачать</button>
+          <div id="button-container">
+            <button
+              id="download-button"
+              class="w-full text-2xl md:text-3xl font-bold bg-white text-black p-2 md:p-3 rounded hover:bg-gray-300"
+            >
+              DOWNLOAD
+            </button>
+          </div>
+
+          <div id="terminal-output" class="terminal hidden">
+            <span class="yt-dlp">[yt-dlp]</span>
+            <span class="download">[download]</span>
+            <span id="progress-text">Starting download... wait a min</span>
+          </div>
+
+          <div id="error-message" class="w-full bg-red-900 border-2 border-red-600 p-3 rounded text-red-300 hidden"></div>
         </div>
-
-        <div id="terminal-output" class="terminal hidden">
-          <span class="yt-dlp">[yt-dlp]</span>
-          <span class="download">[download]</span>
-          <span id="progress-text">Starting download... wait a min</span>
-        </div>
-
-        <div id="error-message" class="error hidden"></div>
       </div>
     </div>
 
+    <!-- External JS file loaded at the end for better performance -->
     <script src="assets/app.js" defer></script>
   </body>
 </html>

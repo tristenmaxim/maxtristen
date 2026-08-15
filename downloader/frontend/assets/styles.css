@@ -1,122 +1,43 @@
-:root {
-  --bg: #0c0e10;
-  --surface: #16191c;
-  --surface-2: #1c2024;
-  --border: #262b30;
-  --text: #e8e9ea;
-  --muted: #8b9198;
-  --faint: #4a5157;
-  --accent: #e8b84b;
-  --accent-dim: #7a6531;
-  --danger: #e2685c;
-  --danger-bg: rgba(226, 104, 92, 0.12);
-}
-
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-}
-
-.back-link {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  font-size: 13px;
-  color: var(--muted);
-  text-decoration: none;
-}
-.back-link:hover { color: var(--text); }
-
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  text-align: center;
-}
-
-h1 {
-  font-size: clamp(28px, 5vw, 40px);
-  margin: 0 0 6px;
-  letter-spacing: -0.01em;
-}
-.page-sub {
-  color: var(--muted);
-  font-size: 14px;
-  margin: 0 0 32px;
-}
-
-.form {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.url-input {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-size: 16px;
-  font-family: inherit;
-}
-.url-input:focus {
-  outline: none;
-  border-color: var(--accent-dim);
-}
-.url-input::placeholder { color: var(--faint); }
-
-.btn-primary {
-  width: 100%;
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 700;
-  background: var(--accent);
-  color: #1a1400;
-  border: none;
-  border-radius: 8px;
-  padding: 13px;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary.btn-disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+body {
+  background-color: black;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .terminal {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 13px;
-  text-align: left;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  padding: 14px 16px;
-  border-radius: 8px;
-}
-.terminal .yt-dlp { color: var(--good, #5fbe7c); }
-.terminal .download { color: var(--accent); }
-.terminal span { margin-right: 6px; }
-
-.error {
-  background: var(--danger-bg);
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 13px;
-  text-align: left;
+  font-family: 'Courier New', monospace;
+  background-color: #2d3748;
+  border: 2px solid #4a5568;
+  padding: 16px;
+  border-radius: 4px;
 }
 
-.hidden { display: none; }
+.terminal .yt-dlp {
+  color: #48bb78; /* green */
+}
+
+.terminal .download {
+  color: #4299e1; /* blue */
+}
+
+@media (max-height: 600px) {
+  h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 0.75rem !important;
+  }
+}
+
+/* Pre-apply state styles to reduce layout shifts */
+.btn-disabled {
+  background-color: #4a5568 !important;
+  cursor: not-allowed !important;
+}
+
+.hidden {
+  display: none !important;
+}
