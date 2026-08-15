@@ -1,10 +1,10 @@
 [Unit]
-Description=vidwizr-service: downloader (yt-dlp video downloader)
+Description=maxtristen: downloader (yt-dlp video downloader)
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/vidwizr-service/downloader/backend
+WorkingDirectory=/opt/maxtristen/downloader/backend
 Environment=PORT=8003
 ExecStart=/usr/bin/node server.js
 Restart=on-failure

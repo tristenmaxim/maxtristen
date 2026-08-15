@@ -1,4 +1,4 @@
-# vidwizr-service
+# maxtristen
 
 Личный набор веб-инструментов, один сайт с разделами:
 
@@ -6,12 +6,12 @@
 - `photo/` — AI-обработка изображений через OpenRouter (FastAPI)
 - `downloader/` — скачивание видео с YouTube/TikTok/Instagram через yt-dlp (Express)
 
-Живёт на `http://146.103.109.188:8090/`.
+Живёт на `https://maxtristen.com/`.
 
 ## Деплой
 
 Push в `main` → `.github/workflows/deploy.yml` синкает репо на сервер, ставит зависимости,
-рестартует `vidwizr-photo`/`vidwizr-downloader` (systemd) и перекладывает nginx-конфиг.
+рестартует `maxtristen-photo`/`maxtristen-downloader` (systemd) и перекладывает nginx-конфиг.
 Конфиги — в `deploy/`.
 
 Реальные `.env` на сервере кладутся вручную (`scp`), в репозиторий не попадают — см.

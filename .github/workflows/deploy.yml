@@ -6,7 +6,8 @@ on:
 
 env:
   SERVER: 146.103.109.188
-  REMOTE_DIR: /opt/vidwizr-service
+  REMOTE_DIR: /opt/maxtristen
+  DOMAIN: maxtristen.com
 
 jobs:
   deploy:
@@ -36,30 +37,29 @@ jobs:
         run: |
           ssh root@"$SERVER" bash -s <<'EOF'
             set -e
-            cd /opt/vidwizr-service
+            cd /opt/maxtristen
 
             # photo backend: venv + deps
             cd photo/backend
             [ -d venv ] || python3 -m venv venv
             venv/bin/pip install -q -r requirements.txt
-            cd /opt/vidwizr-service
+            cd /opt/maxtristen
 
             # downloader backend: node deps
             cd downloader/backend
             npm ci --omit=dev
-            cd /opt/vidwizr-service
+            cd /opt/maxtristen
 
             # nginx + systemd config
-            cp deploy/nginx-vidwizr-service.conf /etc/nginx/sites-available/vidwizr-service
-            ln -sf /etc/nginx/sites-available/vidwizr-service /etc/nginx/sites-enabled/vidwizr-service
-            rm -f /etc/nginx/sites-enabled/background-music
+            cp deploy/nginx-maxtristen.conf /etc/nginx/sites-available/maxtristen
+            ln -sf /etc/nginx/sites-available/maxtristen /etc/nginx/sites-enabled/maxtristen
 
-            cp deploy/vidwizr-photo.service /etc/systemd/system/vidwizr-photo.service
-            cp deploy/vidwizr-downloader.service /etc/systemd/system/vidwizr-downloader.service
+            cp deploy/maxtristen-photo.service /etc/systemd/system/maxtristen-photo.service
+            cp deploy/maxtristen-downloader.service /etc/systemd/system/maxtristen-downloader.service
 
             systemctl daemon-reload
-            systemctl enable --now vidwizr-photo vidwizr-downloader
-            systemctl restart vidwizr-photo vidwizr-downloader
+            systemctl enable --now maxtristen-photo maxtristen-downloader
+            systemctl restart maxtristen-photo maxtristen-downloader
 
             nginx -t
             systemctl reload nginx
@@ -69,7 +69,7 @@ jobs:
         run: |
           sleep 3
           for path in "" "music/" "photo/" "downloader/"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$SERVER:8090/$path")
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$DOMAIN/$path")
             echo "GET /$path -> $code"
             if [ "$code" != "200" ]; then
               echo "Health check failed for /$path"
