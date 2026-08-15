@@ -69,7 +69,7 @@ jobs:
         run: |
           sleep 3
           for path in "" "music/" "photo/" "downloader/"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$DOMAIN/$path")
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/$path")
             echo "GET /$path -> $code"
             if [ "$code" != "200" ]; then
               echo "Health check failed for /$path"
