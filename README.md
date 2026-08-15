@@ -15,7 +15,8 @@ Push в `main` → `.github/workflows/deploy.yml` синкает репо на �
 Конфиги — в `deploy/`.
 
 Реальные `.env` на сервере кладутся вручную (`scp`), в репозиторий не попадают — см.
-`photo/backend/.env.example` для списка нужных переменных.
+`photo/backend/.env.example` для списка нужных переменных. Так же `music/assets/config.local.js`
+(см. `config.local.js.example`) — YouTube API key.
 
 ## Локальный запуск
 

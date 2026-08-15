@@ -9,6 +9,7 @@ node_modules/
 # Secrets — real values live only on the server, deployed manually
 .env
 .env.local
+music/assets/config.local.js
 
 # Runtime data
 downloads/

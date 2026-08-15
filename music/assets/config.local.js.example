@@ -1,0 +1,4 @@
+// Copy to config.local.js (gitignored) and fill in real values.
+// Local: just save it here, music/index.html loads it before config.js.
+// Server: scp it to /opt/maxtristen/music/assets/config.local.js manually.
+window.YOUTUBE_API_KEY = 'YOUR_YOUTUBE_DATA_API_KEY';
