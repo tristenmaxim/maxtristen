@@ -30,6 +30,7 @@ jobs:
             --exclude='venv' \
             --exclude='__pycache__' \
             --exclude='.env' \
+            --exclude='config.local.js' \
             --exclude='downloads' \
             ./ root@"$SERVER":"$REMOTE_DIR"/
 
