@@ -28,7 +28,7 @@ async function connectWallet() {
     try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const address = accounts[0];
-        const { nonce } = await (await fetch('/api/auth/nonce')).json();
+        const { nonce } = await (await fetch('api/auth/nonce')).json();
         const domain = window.location.host;
         const issuedAt = new Date().toISOString();
         const message = `${domain} wants you to sign in with your Ethereum account:\n${address}\n\nSign in to Analyzer\n\nURI: ${window.location.origin}\nVersion: 1\nChain ID: 1\nNonce: ${nonce}\nIssued At: ${issuedAt}`;
@@ -38,7 +38,7 @@ async function connectWallet() {
             params: [message, address],
         });
 
-        const res = await fetch('/api/auth/verify', {
+        const res = await fetch('api/auth/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message, signature }),
@@ -56,7 +56,7 @@ async function connectWallet() {
 }
 
 async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('api/auth/logout', { method: 'POST' });
     appEl.classList.add('hidden');
     connectGate.classList.remove('hidden');
 }
@@ -64,7 +64,7 @@ async function logout() {
 async function getLinkCode() {
     linkBtn.disabled = true;
     try {
-        const res = await fetch('/api/telegram/link-code', { method: 'POST' });
+        const res = await fetch('api/telegram/link-code', { method: 'POST' });
         const data = await res.json();
         linkResult.textContent = `Отправь боту @${data.bot_username}: /link ${data.code}`;
         linkResult.classList.remove('hidden');
@@ -84,7 +84,7 @@ logoutBtn.addEventListener('click', logout);
 linkBtn.addEventListener('click', getLinkCode);
 
 (async function checkAuth() {
-    const res = await fetch('/api/auth/me');
+    const res = await fetch('api/auth/me');
     if (res.ok) showApp();
 })();
 
@@ -125,7 +125,7 @@ form.addEventListener('submit', async (e) => {
 
     submitBtn.disabled = true;
     try {
-        const res = await fetch('/api/entries', { method: 'POST', body: formData });
+        const res = await fetch('api/entries', { method: 'POST', body: formData });
         if (!res.ok) throw new Error((await res.json()).detail || 'Не получилось добавить');
         form.reset();
         fileNameEl.textContent = '';
@@ -173,7 +173,7 @@ function renderEntry(entry) {
         details.appendChild(pre);
         details.addEventListener('toggle', async () => {
             if (details.open && pre.textContent === 'Загрузка…') {
-                const res = await fetch(`/api/entries/${entry.id}`);
+                const res = await fetch(`api/entries/${entry.id}`);
                 const full = await res.json();
                 pre.textContent = full.transcript || '';
             }
@@ -185,7 +185,7 @@ function renderEntry(entry) {
 }
 
 async function refreshLibrary() {
-    const res = await fetch('/api/entries');
+    const res = await fetch('api/entries');
     const entries = await res.json();
     libraryEl.innerHTML = '';
     entries.forEach((entry) => libraryEl.appendChild(renderEntry(entry)));
