@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog — vidwizr</title>
+    <link href="assets/styles.css" rel="stylesheet">
+</head>
+<body>
+    <a href="../" class="back-link">← vidwizr</a>
+    <div class="page">
+        <header class="page-head">
+            <h1>Blog</h1>
+        </header>
+
+        <div class="owner-bar hidden" id="ownerBar">
+            <span></span>
+            <button type="button" class="btn-primary" id="newPostBtn">+ Новый пост</button>
+        </div>
+
+        <div id="listView">
+            <div id="postList" class="post-list"></div>
+        </div>
+
+        <div id="postView" class="hidden">
+            <button type="button" class="btn-link" id="backToListBtn">← ко всем постам</button>
+            <h1 id="postTitle"></h1>
+            <p class="post-date" id="postDate"></p>
+            <div class="prose" id="postBody"></div>
+            <div class="post-actions hidden" id="postOwnerActions">
+                <button type="button" class="btn-secondary" id="editPostBtn">Редактировать</button>
+                <button type="button" class="btn-danger" id="deletePostBtn">Удалить</button>
+            </div>
+        </div>
+
+        <div id="composeView" class="hidden">
+            <button type="button" class="btn-link" id="backFromComposeBtn">← отмена</button>
+            <div class="field">
+                <label for="composeTitle" class="field-label">Заголовок</label>
+                <input id="composeTitle" type="text" class="input">
+            </div>
+            <div class="field">
+                <label for="composeBody" class="field-label">Текст (markdown)</label>
+                <textarea id="composeBody" class="input"></textarea>
+            </div>
+            <div class="field checkbox-row">
+                <input id="composePublished" type="checkbox">
+                <label for="composePublished">Опубликовано</label>
+            </div>
+            <div class="submit-row">
+                <button type="button" class="btn-primary" id="saveComposeBtn">Сохранить</button>
+            </div>
+            <div id="composeError" class="validation-message hidden"></div>
+        </div>
+
+        <div class="footer-auth" id="footerAuth">
+            <button type="button" class="btn-link" id="connectBtn">Войти</button>
+            <button type="button" class="btn-link hidden" id="logoutBtn">Выйти</button>
+            <div id="connectStatus" class="validation-message hidden"></div>
+        </div>
+    </div>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+python-dotenv
+python-multipart
+eth_account
+markdown
