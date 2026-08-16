@@ -51,16 +51,23 @@ jobs:
             npm ci --omit=dev
             cd /opt/maxtristen
 
+            # analyzer backend: venv + deps
+            cd analyzer/backend
+            [ -d venv ] || python3 -m venv venv
+            venv/bin/pip install -q -r requirements.txt
+            cd /opt/maxtristen
+
             # nginx + systemd config
             cp deploy/nginx-maxtristen.conf /etc/nginx/sites-available/maxtristen
             ln -sf /etc/nginx/sites-available/maxtristen /etc/nginx/sites-enabled/maxtristen
 
             cp deploy/maxtristen-photo.service /etc/systemd/system/maxtristen-photo.service
             cp deploy/maxtristen-downloader.service /etc/systemd/system/maxtristen-downloader.service
+            cp deploy/maxtristen-analyzer.service /etc/systemd/system/maxtristen-analyzer.service
 
             systemctl daemon-reload
-            systemctl enable --now maxtristen-photo maxtristen-downloader
-            systemctl restart maxtristen-photo maxtristen-downloader
+            systemctl enable --now maxtristen-photo maxtristen-downloader maxtristen-analyzer
+            systemctl restart maxtristen-photo maxtristen-downloader maxtristen-analyzer
 
             nginx -t
             systemctl reload nginx
@@ -68,7 +75,7 @@ jobs:
 
       - name: Health check
         run: |
-          for path in "" "music/" "photo/" "downloader/"; do
+          for path in "" "music/" "photo/" "downloader/" "analyzer/"; do
             ok=""
             for attempt in 1 2 3 4 5 6; do
               code=$(curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN/$path")

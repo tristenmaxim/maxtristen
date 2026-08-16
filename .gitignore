@@ -13,6 +13,7 @@ music/assets/config.local.js
 
 # Runtime data
 downloads/
+.local-data/
 *.log
 
 # OS

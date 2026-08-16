@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyzer — vidwizr</title>
+    <link href="assets/styles.css" rel="stylesheet">
+</head>
+<body>
+    <a href="../" class="back-link">← vidwizr</a>
+    <div class="page">
+        <header class="page-head">
+            <h1>Analyzer</h1>
+            <p class="page-sub">Пришли ссылку на видео или файл — скачается и расшифруется само (транскрипт с таймкодами и спикерами)</p>
+        </header>
+
+        <form id="submitForm">
+            <div class="field">
+                <label for="url" class="field-label">Ссылка на видео</label>
+                <input id="url" name="url" type="text" class="input" placeholder="https://youtube.com/... или https://tiktok.com/...">
+            </div>
+
+            <div class="or-divider">или</div>
+
+            <div class="field">
+                <div class="drop-zone">
+                    <label for="file-upload" class="drop-cta">
+                        <span class="drop-cta-link">Выбрать файл</span>
+                        <input id="file-upload" name="file" type="file" accept="video/*" class="sr-only">
+                        <span> или перетащите сюда</span>
+                    </label>
+                    <p class="drop-hint" id="fileName"></p>
+                </div>
+            </div>
+
+            <div class="submit-row">
+                <button type="submit" class="btn-primary" id="submitBtn">Добавить в библиотеку</button>
+            </div>
+            <div id="formError" class="validation-message hidden"></div>
+        </form>
+
+        <div class="results">
+            <div class="results-head">
+                <h2>Библиотека</h2>
+            </div>
+            <div id="library"></div>
+        </div>
+    </div>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>
