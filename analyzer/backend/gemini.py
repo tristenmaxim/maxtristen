@@ -2,13 +2,14 @@ import os
 import time
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 _client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -27,9 +28,17 @@ def transcribe(file_path: str) -> str:
     if uploaded.state.name != "ACTIVE":
         raise RuntimeError(f"Gemini file upload failed: state={uploaded.state.name}")
 
-    response = _client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=[uploaded, TRANSCRIBE_PROMPT],
-        config=types.GenerateContentConfig(temperature=0.2),
-    )
-    return response.text
+    last_error = None
+    for attempt, backoff in enumerate((0, 10, 30)):
+        if backoff:
+            time.sleep(backoff)
+        try:
+            response = _client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=[uploaded, TRANSCRIBE_PROMPT],
+                config=types.GenerateContentConfig(temperature=0.2),
+            )
+            return response.text
+        except genai_errors.ServerError as e:
+            last_error = e
+    raise last_error
