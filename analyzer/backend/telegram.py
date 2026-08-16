@@ -3,14 +3,12 @@ from typing import Optional
 
 import httpx
 
+import auth
+import db
+
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("TELEGRAM_BOT_TOKEN not found in environment variables")
-
-TELEGRAM_ALLOWED_USER_ID = os.getenv("TELEGRAM_ALLOWED_USER_ID")
-if not TELEGRAM_ALLOWED_USER_ID:
-    raise ValueError("TELEGRAM_ALLOWED_USER_ID not found in environment variables")
-TELEGRAM_ALLOWED_USER_ID = int(TELEGRAM_ALLOWED_USER_ID)
 
 SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://maxtristen.com")
 
@@ -48,17 +46,31 @@ def parse_update(update: dict) -> Optional[dict]:
     if not message:
         return None
     from_id = message.get("from", {}).get("id")
-    if from_id != TELEGRAM_ALLOWED_USER_ID:
+    if from_id is None:
+        return None
+    chat_id = message["chat"]["id"]
+
+    text = (message.get("text") or "").strip()
+    if text.startswith("/link"):
+        parts = text.split(maxsplit=1)
+        wallet = auth.consume_link_code(parts[1]) if len(parts) == 2 else None
+        if wallet:
+            db.link_telegram(from_id, wallet)
+            send_message(chat_id, "Привязано ✅")
+        else:
+            send_message(chat_id, "Код неверный или истёк")
         return None
 
-    chat_id = message["chat"]["id"]
+    wallet = db.get_wallet_for_telegram(from_id)
+    if wallet is None:
+        return None
 
     video = message.get("video") or message.get("document")
     if video:
-        return {"chat_id": chat_id, "source_type": "telegram_video", "file_id": video["file_id"]}
+        return {"chat_id": chat_id, "source_type": "telegram_video", "file_id": video["file_id"],
+                "wallet_address": wallet}
 
-    text = (message.get("text") or "").strip()
     if text.startswith("http://") or text.startswith("https://"):
-        return {"chat_id": chat_id, "source_type": "url", "url": text}
+        return {"chat_id": chat_id, "source_type": "url", "url": text, "wallet_address": wallet}
 
     return None

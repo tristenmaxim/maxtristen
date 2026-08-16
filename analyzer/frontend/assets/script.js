@@ -1,3 +1,11 @@
+const connectGate = document.getElementById('connectGate');
+const connectBtn = document.getElementById('connectBtn');
+const connectStatus = document.getElementById('connectStatus');
+const appEl = document.getElementById('app');
+const logoutBtn = document.getElementById('logoutBtn');
+const linkBtn = document.getElementById('linkBtn');
+const linkResult = document.getElementById('linkResult');
+
 const form = document.getElementById('submitForm');
 const urlInput = document.getElementById('url');
 const fileInput = document.getElementById('file-upload');
@@ -5,6 +13,80 @@ const fileNameEl = document.getElementById('fileName');
 const submitBtn = document.getElementById('submitBtn');
 const errorEl = document.getElementById('formError');
 const libraryEl = document.getElementById('library');
+
+function showStatus(text) {
+    connectStatus.textContent = text;
+    connectStatus.classList.remove('hidden');
+}
+
+async function connectWallet() {
+    if (!window.ethereum) {
+        showStatus('MetaMask не найден в браузере');
+        return;
+    }
+    connectBtn.disabled = true;
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address = accounts[0];
+        const { nonce } = await (await fetch('/api/auth/nonce')).json();
+        const domain = window.location.host;
+        const issuedAt = new Date().toISOString();
+        const message = `${domain} wants you to sign in with your Ethereum account:\n${address}\n\nSign in to Analyzer\n\nURI: ${window.location.origin}\nVersion: 1\nChain ID: 1\nNonce: ${nonce}\nIssued At: ${issuedAt}`;
+
+        const signature = await window.ethereum.request({
+            method: 'personal_sign',
+            params: [message, address],
+        });
+
+        const res = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, signature }),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.detail || 'Не удалось войти');
+        }
+        showApp();
+    } catch (err) {
+        showStatus(err.message || 'Отклонено');
+    } finally {
+        connectBtn.disabled = false;
+    }
+}
+
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    appEl.classList.add('hidden');
+    connectGate.classList.remove('hidden');
+}
+
+async function getLinkCode() {
+    linkBtn.disabled = true;
+    try {
+        const res = await fetch('/api/telegram/link-code', { method: 'POST' });
+        const data = await res.json();
+        linkResult.textContent = `Отправь боту @${data.bot_username}: /link ${data.code}`;
+        linkResult.classList.remove('hidden');
+    } finally {
+        linkBtn.disabled = false;
+    }
+}
+
+function showApp() {
+    connectGate.classList.add('hidden');
+    appEl.classList.remove('hidden');
+    poll();
+}
+
+connectBtn.addEventListener('click', connectWallet);
+logoutBtn.addEventListener('click', logout);
+linkBtn.addEventListener('click', getLinkCode);
+
+(async function checkAuth() {
+    const res = await fetch('/api/auth/me');
+    if (res.ok) showApp();
+})();
 
 const STATUS_LABELS = {
     queued: 'В очереди',
@@ -114,5 +196,3 @@ async function poll() {
     const hasPending = await refreshLibrary();
     setTimeout(poll, hasPending ? 5000 : 15000);
 }
-
-poll();

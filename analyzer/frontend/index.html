@@ -14,36 +14,53 @@
             <p class="page-sub">Пришли ссылку на видео или файл — скачается и расшифруется само (транскрипт с таймкодами и спикерами)</p>
         </header>
 
-        <form id="submitForm">
-            <div class="field">
-                <label for="url" class="field-label">Ссылка на видео</label>
-                <input id="url" name="url" type="text" class="input" placeholder="https://youtube.com/... или https://tiktok.com/...">
+        <div id="connectGate">
+            <button type="button" class="btn-primary" id="connectBtn">Connect Wallet</button>
+            <div id="connectStatus" class="validation-message hidden"></div>
+        </div>
+
+        <div id="app" class="hidden">
+            <div class="field" style="text-align: right; margin-bottom: 8px;">
+                <button type="button" class="btn-secondary" id="logoutBtn">Выйти</button>
             </div>
 
-            <div class="or-divider">или</div>
-
-            <div class="field">
-                <div class="drop-zone">
-                    <label for="file-upload" class="drop-cta">
-                        <span class="drop-cta-link">Выбрать файл</span>
-                        <input id="file-upload" name="file" type="file" accept="video/*" class="sr-only">
-                        <span> или перетащите сюда</span>
-                    </label>
-                    <p class="drop-hint" id="fileName"></p>
+            <form id="submitForm">
+                <div class="field">
+                    <label for="url" class="field-label">Ссылка на видео</label>
+                    <input id="url" name="url" type="text" class="input" placeholder="https://youtube.com/... или https://tiktok.com/...">
                 </div>
+
+                <div class="or-divider">или</div>
+
+                <div class="field">
+                    <div class="drop-zone">
+                        <label for="file-upload" class="drop-cta">
+                            <span class="drop-cta-link">Выбрать файл</span>
+                            <input id="file-upload" name="file" type="file" accept="video/*" class="sr-only">
+                            <span> или перетащите сюда</span>
+                        </label>
+                        <p class="drop-hint" id="fileName"></p>
+                    </div>
+                </div>
+
+                <div class="submit-row">
+                    <button type="submit" class="btn-primary" id="submitBtn">Добавить в библиотеку</button>
+                </div>
+                <div id="formError" class="validation-message hidden"></div>
+            </form>
+
+            <div class="field" style="margin-top: 30px;">
+                <label class="field-label">Telegram-бот</label>
+                <button type="button" class="btn-secondary" id="linkBtn">Получить код привязки</button>
+                <p class="field-hint hidden" id="linkResult"></p>
             </div>
 
-            <div class="submit-row">
-                <button type="submit" class="btn-primary" id="submitBtn">Добавить в библиотеку</button>
+            <div class="results">
+                <div class="results-head">
+                    <h2>Библиотека</h2>
+                </div>
+                <div id="library"></div>
             </div>
-            <div id="formError" class="validation-message hidden"></div>
-        </form>
-
-        <div class="results">
-            <div class="results-head">
-                <h2>Библиотека</h2>
-            </div>
-            <div id="library"></div>
         </div>
     </div>
 
