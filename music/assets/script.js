@@ -1,5 +1,5 @@
 let player;
-const playlistId = window.APP_CONFIG.PLAYLIST_ID;
+let playlistId = localStorage.getItem('musicPlaylistId') || window.APP_CONFIG.PLAYLIST_ID;
 const YOUTUBE_API_KEY = window.APP_CONFIG.YOUTUBE_API_KEY;
 let progressInterval;
 
@@ -156,6 +156,9 @@ function setupPlayerControls() {
     // Set up shuffle toggle
     document.getElementById('shuffle-toggle').addEventListener('click', toggleShuffle);
 
+    // Set up cassette (playlist switch) button
+    document.getElementById('cassette-btn').addEventListener('click', changeCassette);
+
     // Set up audio controls
     setupAudioControls();
     
@@ -187,6 +190,43 @@ function waitForPlaylist(attempt = 0) {
     }
 
     setTimeout(() => waitForPlaylist(attempt + 1), 250);
+}
+
+// Cassette (playlist switch) functions
+function extractPlaylistId(input) {
+    const trimmed = input.trim();
+    try {
+        const url = new URL(trimmed);
+        const listParam = url.searchParams.get('list');
+        if (listParam) return listParam;
+    } catch (e) {
+        // Not a URL, treat as a raw playlist ID
+    }
+    return trimmed;
+}
+
+function changeCassette() {
+    const input = prompt('Вставь ID плейлиста или ссылку на YouTube-плейлист:', playlistId);
+    if (!input) return;
+
+    const newPlaylistId = extractPlaylistId(input);
+    if (!newPlaylistId || newPlaylistId === playlistId) return;
+
+    playlistId = newPlaylistId;
+    localStorage.setItem('musicPlaylistId', playlistId);
+
+    if (player && typeof player.loadPlaylist === 'function') {
+        player.loadPlaylist({ listType: 'playlist', list: playlistId, index: 0 });
+
+        // Reset track list state for the new playlist
+        currentTrackIndex = -1;
+        currentlyPlayingIndex = -1;
+        shuffledPlaylist = null;
+        document.getElementById('track-count').textContent = '--';
+        if (isTrackListVisible) {
+            waitForPlaylist();
+        }
+    }
 }
 
 function onPlayerStateChange(event) {
