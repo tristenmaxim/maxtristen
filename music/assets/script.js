@@ -25,9 +25,33 @@ let previousVolume = 100; // Store volume before muting
 // This function is called when the YouTube Iframe API is ready.
 function onYouTubeIframeAPIReady() {
     console.log('YouTube API ready - starting player');
+    clearTimeout(iframeApiRetryTimer);
 
     // Create player without preloading
     preloadPlayer();
+}
+
+// The iframe_api script sometimes fails to load or call back (slow network,
+// ad-blocker, CDN hiccup) leaving the start button stuck disabled forever.
+// Retry loading it a few times if the callback doesn't fire in time.
+let iframeApiRetryCount = 0;
+let iframeApiRetryTimer = setTimeout(scheduleIframeApiRetry, 5000);
+
+function scheduleIframeApiRetry() {
+    if (window.YT && window.YT.Player) return; // already loaded
+
+    if (iframeApiRetryCount >= 4) {
+        console.error('YouTube API failed to load after multiple retries.');
+        return;
+    }
+    iframeApiRetryCount++;
+    console.warn(`YouTube API not ready, retrying (${iframeApiRetryCount})...`);
+
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api?retry=' + iframeApiRetryCount;
+    document.head.appendChild(script);
+
+    iframeApiRetryTimer = setTimeout(scheduleIframeApiRetry, 5000);
 }
 
 
