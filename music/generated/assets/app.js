@@ -7,7 +7,7 @@ const state = {
   booted: false, booting: null, playing: false,
   scene: 'lofi', seed: (Math.random() * 1e9) | 0,
   track: null, t0: 0, cps: 0.3, regenAt: -1,
-  params: { master: 0.8, intensity: 0.6, brightness: 0.5, space: 0.5 },
+  params: { master: 0.8, intensity: 0.6, brightness: 0.5, space: 0.5, texture: 0.35 },
 };
 
 /* ---------- адрес страницы ---------- */
@@ -55,6 +55,7 @@ function buildTrack(inherit) {
     intensity: state.params.intensity,
     brightness: state.params.brightness,
     space: state.params.space,
+    texture: state.params.texture,
     master: state.params.master,
   });
   $('code').textContent = state.track.code;
@@ -256,6 +257,7 @@ bindKnob('k-master', 'master');
 bindKnob('k-intensity', 'intensity');
 bindKnob('k-brightness', 'brightness');
 bindKnob('k-space', 'space');
+bindKnob('k-texture', 'texture');
 
 /* ---------- часы аранжировки ---------- */
 function tick() {

@@ -8,11 +8,11 @@ const SCENES = {
     tonality: [['minor', 7], ['major', 3]],
     modes: { minor: ['aeolian', 'dorian'], major: ['ionian', 'lydian'] },
     reharm: 0.5,
-    keySound: 'fmpiano', keyGain: 0.62, keyRoom: 0.35, keyLpf: [1600, 3400],
-    bassSound: 'triangle', bassGain: 0.85,
-    melSound: 'vibraphone_soft', melGain: 0.44, melReg: [65, 79], melDensity: 0.72,
-    padSound: 'sawtooth', padGain: 0.1,
-    drums: { bank: 'AkaiMPC60', gain: 0.9, swing: [0.11, 0.17], lpf: 7000 },
+    keySound: 'fmpiano', keyGain: 1.6, keyRoom: 0.35, keyLpf: [1600, 3400],
+    bassSound: 'triangle', bassGain: 0.69,
+    melSound: 'vibraphone_soft', melGain: 0.92, melReg: [65, 79], melDensity: 0.72,
+    padSound: 'sawtooth', padGain: 0.02,
+    drums: { bank: 'AkaiMPC60', gain: 0.79, swing: [0.11, 0.17], lpf: 7000 },
     texture: ['vinyl', 'hiss'],
     wow: 0.004, form: 'beat',
   },
@@ -23,11 +23,11 @@ const SCENES = {
     tonality: [['major', 5], ['minor', 5]],
     modes: { minor: ['dorian', 'aeolian', 'harmonicMinor'], major: ['ionian', 'lydian', 'mixolydian'] },
     reharm: 0.85,
-    keySound: 'piano', keyGain: 0.5, keyRoom: 0.4, keyLpf: [2200, 5200],
-    bassSound: 'triangle', bassGain: 0.8,
-    melSound: 'piano', melGain: 0.34, melReg: [69, 86], melDensity: 0.78,
-    padSound: 'sawtooth', padGain: 0.06,
-    drums: { bank: 'LinnDrum', gain: 0.72, swing: [0.15, 0.22], lpf: 9000 },
+    keySound: 'piano', keyGain: 1.3, keyRoom: 0.4, keyLpf: [2200, 5200],
+    bassSound: 'triangle', bassGain: 0.62,
+    melSound: 'piano', melGain: 0.7, melReg: [69, 86], melDensity: 0.78,
+    padSound: 'sawtooth', padGain: 0.012,
+    drums: { bank: 'LinnDrum', gain: 0.63, swing: [0.15, 0.22], lpf: 9000 },
     texture: ['vinyl'],
     wow: 0.003, form: 'beat',
   },
@@ -38,10 +38,10 @@ const SCENES = {
     tonality: [['modal', 8], ['major', 2]],
     modes: { minor: ['dorian', 'aeolian'], major: ['ionian', 'lydian'], modal: ['dorian', 'lydian', 'majPent'] },
     reharm: 0.1,
-    keySound: 'clavisynth', keyGain: 0.32, keyRoom: 0.6, keyLpf: [900, 2200],
-    bassSound: 'sine', bassGain: 0.55,
-    melSound: 'marimba', melGain: 0.3, melReg: [69, 86], melDensity: 0.8,
-    padSound: 'sawtooth', padGain: 0.16,
+    keySound: 'clavisynth', keyGain: 0.85, keyRoom: 0.6, keyLpf: [900, 2200],
+    bassSound: 'sine', bassGain: 0.37,
+    melSound: 'marimba', melGain: 0.62, melReg: [69, 86], melDensity: 0.8,
+    padSound: 'sawtooth', padGain: 0.055,
     drums: null,
     texture: ['hiss', 'pulse'],
     wow: 0.002, form: 'pulse',
@@ -53,10 +53,10 @@ const SCENES = {
     tonality: [['modal', 10]],
     modes: { modal: ['lydian', 'majPent', 'kumoi', 'dorian'], minor: ['aeolian'], major: ['lydian'] },
     reharm: 0.05,
-    keySound: 'psaltery_bow', keyGain: 0.3, keyRoom: 0.85, keyLpf: [700, 2000],
-    bassSound: 'sine', bassGain: 0.4,
-    melSound: 'glockenspiel', melGain: 0.24, melReg: [76, 93], melDensity: 0.3,
-    padSound: 'sawtooth', padGain: 0.22,
+    keySound: 'psaltery_bow', keyGain: 0.8, keyRoom: 0.85, keyLpf: [700, 2000],
+    bassSound: 'sine', bassGain: 0.33,
+    melSound: 'glockenspiel', melGain: 0.5, melReg: [76, 93], melDensity: 0.3,
+    padSound: 'sawtooth', padGain: 0.085,
     drums: null,
     texture: ['hiss', 'air'],
     wow: 0.005, form: 'ambient',
@@ -68,10 +68,10 @@ const SCENES = {
     tonality: [['minor', 6], ['modal', 4]],
     modes: { minor: ['aeolian', 'dorian'], modal: ['minPent', 'dorian'], major: ['ionian'] },
     reharm: 0.15,
-    keySound: 'piano', keyGain: 0.34, keyRoom: 0.8, keyLpf: [500, 1400],
-    bassSound: 'sine', bassGain: 0.45,
-    melSound: 'kalimba', melGain: 0.24, melReg: [59, 74], melDensity: 0.25,
-    padSound: 'sawtooth', padGain: 0.18,
+    keySound: 'piano', keyGain: 0.9, keyRoom: 0.8, keyLpf: [500, 1400],
+    bassSound: 'sine', bassGain: 0.37,
+    melSound: 'kalimba', melGain: 0.5, melReg: [59, 74], melDensity: 0.25,
+    padSound: 'sawtooth', padGain: 0.065,
     drums: null,
     texture: ['rain', 'hiss'],
     wow: 0.006, form: 'ambient',
@@ -125,7 +125,7 @@ const MOTIFS = [
 const grid = (n = 16) => new Array(n).fill(null);
 const mini = (cells) => cells.map((c) => (c === null || c === undefined ? '~' : c)).join(' ');
 const isEmpty = (cells) => cells.every((c) => c === null || c === undefined);
-const f2 = (x) => Number(x).toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+const f2 = (x) => (Math.abs(x) < 0.1 ? Number(x).toFixed(4) : Number(x).toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
 
 /* ---------- генератор ---------- */
 
@@ -314,6 +314,7 @@ function generateTrack(seed, sceneId, opts = {}) {
     sc, sceneId, rnd, bpm, bars, intensity, sections,
     kickBars, snareBars, hatBars, percBars, bassBars, keyBars, melBars, padBars,
     meta, master: opts.master ?? 1, brightness: opts.brightness ?? 0.5, space: opts.space ?? 0.5,
+    tex: opts.texture ?? 0.35,
   });
 
   return { code, meta, notesUsed: collectNotes({ bassBars, keyBars, melBars, padBars }) };
@@ -441,23 +442,32 @@ function renderCode(ctx) {
     layers.push('  // подкладка\n  ' + catOf(ctx.padBars, (n) => 'note("' + n + '")')
       + '.s("' + sc.padSound + '").attack(' + f2(0.9 + space) + ').release(' + f2(1.4 + space * 2) + ').clip(1.15)'
       + '.lpf(perlin.range(' + Math.round(260 + bright * 200) + ',' + Math.round(700 + bright * 900) + ').slow(29))'
-      + '.lpq(6).detune(0.12)'
+      + '.lpq(1.4)'
       + '.room(' + room(0.9) + ').roomsize(' + f2(5 + space * 5) + ')'
       + '.postgain(' + gain(sc.padGain) + ').orbit(5)');
   }
 
+  // Шумовые слои держим непрерывными: одно событие на 8 тактов вместо
+  // перезапуска каждый такт — иначе фон «дышит» в темп.
+  const tex = ctx.tex;
+  const tg = (v) => f2(v * tex * ctx.master);
+  // Плоская огибающая и стык встык: событие длиной ровно в такт, без спада к
+  // sustain и без хвоста — иначе шум «дышит» в темп на каждом стыке.
+  const hold = '.clip(1).attack(0.05).decay(0).sustain(1).release(0.05)';
+  if (tex > 0.01) for (const t of sc.texture) {
+    if (t === 'vinyl') layers.push('  // винил\n  s("crackle")' + hold + '.density(' + f2(6 + ctx.intensity * 8) + ').hpf(240).lpf(' + Math.round(3000 + bright * 2500) + ').postgain(' + tg(0.086) + ').orbit(6)');
+    if (t === 'hiss') layers.push('  // лента\n  s("pink")' + hold + '.hpf(600).lpf(3800).postgain(' + tg(0.051) + ').orbit(6)');
+    if (t === 'air') layers.push('  // воздух\n  s("pink")' + hold + '.hpf(1400).lpf(sine.range(2600,7000).slow(31)).postgain(' + tg(0.034) + ').pan(sine.range(0.3,0.7).slow(19)).orbit(6)');
+    if (t === 'rain') layers.push('  // дождь\n  stack(\n    s("brown")' + hold + '.lpf(1100).hpf(180).postgain(' + tg(0.23) + '),\n    s("crackle")' + hold + '.density(70).hpf(900).lpf(6000).postgain(' + tg(0.034) + ')\n  ).pan(sine.range(0.35,0.65).slow(37)).orbit(6)');
+  }
   for (const t of sc.texture) {
-    if (t === 'vinyl') layers.push('  // винил\n  s("crackle").clip(1.1).attack(0.2).release(0.3).density(' + f2(10 + ctx.intensity * 14) + ').hpf(320).lpf(' + Math.round(4000 + bright * 4000) + ').postgain(' + gain(0.32) + ').orbit(6)');
-    if (t === 'hiss') layers.push('  // лента\n  s("pink").clip(1.2).attack(0.4).release(0.6).hpf(520).lpf(4200).postgain(' + gain(0.075) + ').orbit(6)');
-    if (t === 'air') layers.push('  // воздух\n  s("pink").clip(1.2).attack(0.8).release(1.2).hpf(1400).lpf(sine.range(2600,7000).slow(31)).postgain(' + gain(0.05) + ').pan(sine.range(0.3,0.7).slow(19)).orbit(6)');
-    if (t === 'rain') layers.push('  // дождь\n  stack(\n    s("brown").clip(1.2).attack(0.6).release(0.8).lpf(1100).hpf(180).postgain(' + gain(0.34) + '),\n    s("crackle").clip(1.1).attack(0.2).release(0.3).density(90).hpf(900).lpf(6500).postgain(' + gain(0.12) + ')\n  ).pan(sine.range(0.35,0.65).slow(37)).orbit(6)');
-    if (t === 'pulse') layers.push('  // пульс\n  s("hh").bank("RolandCompurhythm78").struct("t ~ ~ ~ t ~ ~ ~").gain(0.24).lpf(3000).room(' + room(0.5) + ').postgain(' + gain(0.5) + ').orbit(6)');
+    if (t === 'pulse') layers.push('  // пульс\n  s("hh").bank("RolandCompurhythm78").struct("t ~ ~ ~ t ~ ~ ~").gain(0.24).lpf(3000).room(' + room(0.5) + ').postgain(' + gain(0.35) + ').orbit(7)');
   }
 
   L.push(layers.join(',\n'));
   L.push(')');
   const swing = sc.drums ? R.pick(ctx.rnd, [sc.drums.swing[0], (sc.drums.swing[0] + sc.drums.swing[1]) / 2, sc.drums.swing[1]]) : 0;
   if (swing) L.push('.swingBy(' + f2(swing) + ', 8)');
-  L.push('.postgain(0.4).analyze(1)');
+  L.push('.postgain(0.46).analyze(1)');
   return L.join('\n');
 }
