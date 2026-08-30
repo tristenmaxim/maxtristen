@@ -45,6 +45,46 @@ const SCALES = {
   minPent:      [0, 3, 5, 7, 10],
   kumoi:        [0, 2, 3, 7, 9],
   hirajoshi:    [0, 2, 3, 7, 8],
+  // бибоп-лады: восьмая (проходящая) ступень — то, из-за чего линия звучит
+  // как джаз, а не как пробежка по гамме
+  bebopMajor:   [0, 2, 4, 5, 7, 8, 9, 11],
+  bebopDominant:[0, 2, 4, 5, 7, 9, 10, 11],
+  bebopDorian:  [0, 2, 3, 4, 5, 7, 9, 10],
+  altered:      [0, 1, 3, 4, 6, 8, 10],
+  lydianDominant:[0, 2, 4, 6, 7, 9, 10],
+  melodicMinor: [0, 2, 3, 5, 7, 9, 11],
+  wholeTone:    [0, 2, 4, 6, 8, 10],
+  locrian2:     [0, 2, 3, 5, 6, 8, 10],
+  dimWholeHalf: [0, 2, 3, 5, 6, 8, 9, 11],
+};
+
+/* Лад под каждый тип аккорда — от основного тона аккорда, а не тоники.
+   Это chord-scale: над доминантой играем альтерацию, над минором — дорийский
+   бибоп и так далее. */
+const CHORD_SCALE = {
+  maj7: 'bebopMajor', maj9: 'bebopMajor', maj69: 'bebopMajor', majS11: 'lydian',
+  min7: 'bebopDorian', min9: 'bebopDorian', min11: 'bebopDorian', min6: 'bebopDorian',
+  min69: 'bebopDorian', minMaj7: 'melodicMinor',
+  dom7: 'bebopDominant', dom9: 'bebopDominant', dom13: 'bebopDominant',
+  domS9: 'altered', domB9: 'altered', domB13: 'altered', domAlt: 'altered',
+  domS11: 'lydianDominant', dom13S11: 'lydianDominant', dom13B9: 'altered',
+  m7b5: 'locrian2', dim7: 'dimWholeHalf',
+  sus2: 'mixolydian', sus4: 'mixolydian', sus7: 'mixolydian', sus9: 'mixolydian',
+  sus13: 'mixolydian', add9: 'ionian',
+};
+
+/* То же самое, но без бибопа и альтераций — для спокойных сцен, где нужна
+   просто согласованность с аккордом, а не джазовая линия. */
+const CHORD_SCALE_PLAIN = {
+  maj7: 'ionian', maj9: 'ionian', maj69: 'ionian', majS11: 'lydian',
+  min7: 'dorian', min9: 'dorian', min11: 'dorian', min6: 'dorian',
+  min69: 'dorian', minMaj7: 'melodicMinor',
+  dom7: 'mixolydian', dom9: 'mixolydian', dom13: 'mixolydian',
+  domS9: 'mixolydian', domB9: 'mixolydian', domB13: 'mixolydian', domAlt: 'mixolydian',
+  domS11: 'lydianDominant', dom13S11: 'lydianDominant', dom13B9: 'mixolydian',
+  m7b5: 'locrian2', dim7: 'dimWholeHalf',
+  sus2: 'mixolydian', sus4: 'mixolydian', sus7: 'mixolydian', sus9: 'mixolydian',
+  sus13: 'mixolydian', add9: 'ionian',
 };
 
 /* Аккорды: полный набор тонов от основного тона. */
@@ -70,6 +110,24 @@ const CHORDS = {
   sus4:   [0, 5, 7, 14],
   sus7:   [0, 5, 7, 10, 14],
   add9:   [0, 4, 7, 14],
+  domAlt:   [0, 4, 8, 10, 13, 15],
+  domS11:   [0, 4, 7, 10, 18],
+  dom13S11: [0, 4, 7, 10, 14, 18, 21],
+  dom13B9:  [0, 4, 7, 10, 13, 21],
+  min69:    [0, 3, 7, 9, 14],
+  sus9:     [0, 5, 7, 10, 14],
+  sus13:    [0, 5, 7, 10, 14, 21],
+};
+
+/* Суффиксы аккордов в записи iReal — их понимает встроенный движок вольтовок
+   Strudel (словарь ireal: ~90 типов, у каждого до 9 вариантов расположения). */
+const IREAL = {
+  maj7: '^7', maj9: '^9', maj69: '69', majS11: '^7#11',
+  min7: 'm7', min9: 'm9', min11: 'm11', min6: 'm6', min69: 'm69', minMaj7: 'm^7',
+  dom7: '7', dom9: '9', dom13: '13', domS9: '7#9', domB9: '7b9', domB13: '7b13',
+  domAlt: '7alt', domS11: '7#11', dom13S11: '13#11', dom13B9: '13b9',
+  m7b5: 'm7b5', dim7: 'o7',
+  sus2: 'sus', sus4: 'sus', sus7: '7sus', sus9: '9sus', sus13: '13sus', add9: 'add9',
 };
 
 /* Безосновные («rootless») джазовые вольтовки — то, что реально играет левая/правая рука
@@ -96,6 +154,13 @@ const VOICINGS = {
   sus4:   [[5, 7, 10, 14], [10, 14, 17, 19]],
   sus7:   [[5, 10, 14, 17], [10, 14, 17, 21]],
   add9:   [[4, 7, 14, 16], [7, 14, 16, 19]],
+  domAlt:   [[4, 10, 13, 15], [10, 13, 16, 20]],
+  domS11:   [[4, 10, 14, 18], [10, 14, 18, 21]],
+  dom13S11: [[4, 10, 14, 18], [10, 14, 18, 21]],
+  dom13B9:  [[4, 9, 10, 13], [10, 13, 16, 21]],
+  min69:    [[3, 9, 14, 16], [9, 14, 15, 19]],
+  sus9:     [[5, 10, 14, 17], [10, 14, 17, 19]],
+  sus13:    [[5, 10, 14, 21], [10, 14, 17, 21]],
 };
 
 const chordTones = (rootPc, type) => (CHORDS[type] || CHORDS.min7).map((i) => (rootPc + i) % 12);
@@ -195,7 +260,9 @@ function reharmonize(bars, rnd, amount) {
     const c = { ...b };
     if (/^dom/.test(c.t) && R.chance(rnd, amount * 0.35)) {
       c.r = (c.r + 6) % 12;                       // тритоновая замена
-      c.t = R.pick(rnd, ['dom13', 'domS9', 'dom9']);
+      c.t = R.pick(rnd, ['dom13', 'domS9', 'dom9', 'dom13S11']);
+    } else if (/^dom/.test(c.t) && R.chance(rnd, amount * 0.3)) {
+      c.t = R.pick(rnd, ['domAlt', 'dom13B9', 'domB13', 'domS11']);   // альтерация
     } else if (/^min/.test(c.t) && R.chance(rnd, amount * 0.25)) {
       c.t = c.t === 'min7' ? 'min9' : 'min11';    // расширение
     } else if (/^maj/.test(c.t) && R.chance(rnd, amount * 0.25)) {
@@ -203,4 +270,57 @@ function reharmonize(bars, rnd, amount) {
     }
     return c;
   });
+}
+
+/* Эвклидов ритм: k ударов равномерно по n шагам, с поворотом.
+   euclidSteps(3,8) = x..x..x. — тресильо, основа половины мировой музыки. */
+function euclidSteps(k, n, rot = 0) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(((i * k) % n) < k);
+  const r = ((rot % n) + n) % n;
+  return out.slice(r).concat(out.slice(0, r));
+}
+
+/* Гармония через встроенный движок Strudel: словарь ireal даёт куда больше
+   вариантов расположения, чем таблица VOICINGS выше, и сам ведёт голоса.
+   Если Strudel не загружен или символ не распознан — падаем на свою таблицу. */
+function voiceProgressionIreal(prog, tonicPc, range) {
+  const W = typeof window !== 'undefined' ? window : null;
+  if (!W || !W.strudel || typeof W.chord !== 'function') return null;
+  const symbols = prog.map((c) => pcName((tonicPc + c.r) % 12) + (IREAL[c.t] || 'm7'));
+  try {
+    if (range) W.strudel.setVoicingRange('ireal', range);
+    const pat = W.chord('<' + symbols.join(' ') + '>').dict('ireal').voicing();
+    const out = [];
+    for (let i = 0; i < prog.length; i++) {
+      const haps = pat.queryArc(i, i + 1).filter((h) => h.hasOnset && h.value && h.value.note !== undefined);
+      const notes = haps.map((h) => (typeof h.value.note === 'number' ? h.value.note : W.strudel.noteToMidi(h.value.note)));
+      if (!notes.length) return null;              // символ не распознан — запасной путь
+      out.push([...new Set(notes)].sort((a, b) => a - b));
+    }
+    return out;
+  } catch (e) {
+    return null;
+  }
+}
+
+/* Пул нот для мелодии над конкретным аккордом. */
+function chordScaleNotes(rootPc, type, lo, hi, tier) {
+  const name = (tier === 'plain' ? CHORD_SCALE_PLAIN : CHORD_SCALE)[type];
+  if (!name) return null;
+  return scaleNotes(rootPc, name, lo, hi);
+}
+
+
+/* Какая терция у лада — чтобы не ставить дорийский лад под мажорный тонический
+   аккорд (Eb против E звучит как ошибка, а не как краска). */
+const modeThird = (mode) => ((SCALES[mode] || SCALES.aeolian).includes(4) ? 4 : 3);
+const chordThird = (type) => (/^(min|m7b5|dim)/.test(type) ? 3 : 4);
+
+/* Ноты аккорда в заданном регистре — без оглядки на глобальный лад. */
+function chordNotesInRange(rootPc, type, lo, hi) {
+  const tones = chordTones(rootPc, type);
+  const out = [];
+  for (let n = lo; n <= hi; n++) if (tones.includes(((n % 12) + 12) % 12)) out.push(n);
+  return out;
 }

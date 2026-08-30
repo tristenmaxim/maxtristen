@@ -178,7 +178,10 @@ async function startTrackInner() {
   $('play').disabled = true;
   $('status').textContent = state.booted ? 'Собираю трек…' : 'Загружаю движок и сэмплы…';
   await boot();
-  const track = state.track || buildTrack();
+  // до загрузки Strudel гармония считается запасной таблицей — пересобираем,
+  // чтобы взять словарь вольтовок iReal
+  if (!state.track || state.track.meta.voicedBy !== 'ireal') buildTrack();
+  const track = state.track;
   $('status').textContent = 'Подгружаю инструменты…';
   await warmSamples(state.scene, track.notesUsed);
   await window.evaluate(track.code, true);

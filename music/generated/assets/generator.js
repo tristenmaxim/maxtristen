@@ -7,7 +7,7 @@ const SCENES = {
     bpm: [70, 82],
     tonality: [['minor', 7], ['major', 3]],
     modes: { minor: ['aeolian', 'dorian'], major: ['ionian', 'lydian'] },
-    reharm: 0.5,
+    reharm: 0.5, chordScales: 'bebop',
     keySound: 'fmpiano', keyGain: 1.6, keyRoom: 0.35, keyLpf: [1600, 3400],
     bassSound: 'triangle', bassGain: 0.69,
     melSound: 'vibraphone_soft', melGain: 0.92, melReg: [65, 79], melDensity: 0.72,
@@ -22,7 +22,7 @@ const SCENES = {
     bpm: [82, 92],
     tonality: [['major', 5], ['minor', 5]],
     modes: { minor: ['dorian', 'aeolian', 'harmonicMinor'], major: ['ionian', 'lydian', 'mixolydian'] },
-    reharm: 0.85,
+    reharm: 0.85, chordScales: 'bebop',
     keySound: 'piano', keyGain: 1.3, keyRoom: 0.4, keyLpf: [2200, 5200],
     bassSound: 'triangle', bassGain: 0.62,
     melSound: 'piano', melGain: 0.7, melReg: [69, 86], melDensity: 0.78,
@@ -37,7 +37,7 @@ const SCENES = {
     bpm: [60, 70],
     tonality: [['modal', 8], ['major', 2]],
     modes: { minor: ['dorian', 'aeolian'], major: ['ionian', 'lydian'], modal: ['dorian', 'lydian', 'majPent'] },
-    reharm: 0.1,
+    reharm: 0.1, chordScales: 'plain',
     keySound: 'clavisynth', keyGain: 0.85, keyRoom: 0.6, keyLpf: [900, 2200],
     bassSound: 'sine', bassGain: 0.37,
     melSound: 'marimba', melGain: 0.62, melReg: [69, 86], melDensity: 0.8,
@@ -52,7 +52,7 @@ const SCENES = {
     bpm: [42, 54],
     tonality: [['modal', 10]],
     modes: { modal: ['lydian', 'majPent', 'kumoi', 'dorian'], minor: ['aeolian'], major: ['lydian'] },
-    reharm: 0.05,
+    reharm: 0.05, chordScales: 'plain',
     keySound: 'psaltery_bow', keyGain: 0.8, keyRoom: 0.85, keyLpf: [700, 2000],
     bassSound: 'sine', bassGain: 0.33,
     melSound: 'glockenspiel', melGain: 0.5, melReg: [76, 93], melDensity: 0.3,
@@ -67,7 +67,7 @@ const SCENES = {
     bpm: [46, 56],
     tonality: [['minor', 6], ['modal', 4]],
     modes: { minor: ['aeolian', 'dorian'], modal: ['minPent', 'dorian'], major: ['ionian'] },
-    reharm: 0.15,
+    reharm: 0.15, chordScales: 'plain',
     keySound: 'piano', keyGain: 0.9, keyRoom: 0.8, keyLpf: [500, 1400],
     bassSound: 'sine', bassGain: 0.37,
     melSound: 'kalimba', melGain: 0.5, melReg: [59, 74], melDensity: 0.25,
@@ -141,22 +141,34 @@ function generateTrack(seed, sceneId, opts = {}) {
   const tonicPc = inh ? inh.tonic : R.int(rnd, 0, 11);
   const family = inh ? inh.family : R.weighted(rnd, sc.tonality);
   const modeList = sc.modes[family] || sc.modes.minor || ['dorian'];
-  const mode = inh ? inh.mode : R.pick(rnd, modeList);
   const progSet = PROGRESSIONS[family] || PROGRESSIONS.minor;
   const progDef = R.pick(rnd, progSet);
   const prog = reharmonize(progDef.bars, rnd, sc.reharm);
   const loop = prog.length;
 
+  // лад подбираем под тонический аккорд: мажорный аккорд — мажорная терция
+  const tonicChord = prog.find((c) => c.r === 0) || prog[0];
+  const wantThird = chordThird(tonicChord.t);
+  const fitting = modeList.filter((m) => modeThird(m) === wantThird);
+  const mode = inh ? inh.mode
+    : R.pick(rnd, fitting.length ? fitting : [wantThird === 4 ? 'ionian' : 'aeolian']);
+
   // гармония: голосоведение по кругу, чтобы стык последнего и первого такта тоже был плавным
-  const voicings = [];
-  let prev = null;
   const center = sc.form === 'ambient' ? 67 : 64;
-  for (let pass = 0; pass < 2; pass++) {
-    for (let i = 0; i < loop; i++) {
-      const pc = (tonicPc + prog[i].r) % 12;
-      const v = voiceChord(pc, prog[i].t, prev, center, rnd);
-      if (pass === 1) voicings[i] = v;
-      prev = v;
+  const range = sc.form === 'ambient' ? ['E3', 'C5'] : ['E3', 'A4'];
+  let voicings = voiceProgressionIreal(prog, tonicPc, range);
+  let voicedBy = 'ireal';
+  if (!voicings) {
+    voicedBy = 'встроенная таблица';
+    voicings = [];
+    let prev = null;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < loop; i++) {
+        const pc = (tonicPc + prog[i].r) % 12;
+        const v = voiceChord(pc, prog[i].t, prev, center, rnd);
+        if (pass === 1) voicings[i] = v;
+        prev = v;
+      }
     }
   }
 
@@ -170,7 +182,12 @@ function generateTrack(seed, sceneId, opts = {}) {
   const kickBase = R.pick(rnd, KICKS);
   const snareBase = R.pick(rnd, SNARES);
   const ghostBase = R.pick(rnd, GHOSTS);
-  const hatBase = R.pick(rnd, HATS);
+  // часть треков получает хэты эвклидовым ритмом вместо готового паттерна
+  const hatBase = R.chance(rnd, 0.3)
+    ? euclidSteps(R.pick(rnd, [7, 9, 11]), 16, R.int(rnd, 0, 3)).map((on, i) => (on ? i : -1)).filter((i) => i >= 0)
+    : R.pick(rnd, HATS);
+  const percK = R.pick(rnd, [3, 5, 7]);
+  const percRot = R.int(rnd, -3, 3);
 
   const kickBars = [], snareBars = [], hatBars = [], percBars = [];
   for (let b = 0; b < bars; b++) {
@@ -200,8 +217,11 @@ function generateTrack(seed, sceneId, opts = {}) {
 
     const p = grid(), pg = grid();
     if (sec.perc) {
-      const opts2 = R.shuffle(rnd, [2, 5, 6, 9, 11, 13]).slice(0, R.int(rnd, 1, 3));
-      for (const st of opts2) { p[st] = R.pick(rnd, ['rim', 'perc']); pg[st] = f2(0.2 + rnd() * 0.2); }
+      const voice = R.pick(rnd, ['rim', 'perc']);
+      euclidSteps(percK, 16, percRot).forEach((on, st) => {
+        if (!on || st % 4 === 0) return;              // не спорим с киком на долях
+        p[st] = voice; pg[st] = f2(0.18 + rnd() * 0.2);
+      });
     }
     percBars.push(isEmpty(p) ? null : { s: p, g: pg });
   }
@@ -266,7 +286,11 @@ function generateTrack(seed, sceneId, opts = {}) {
     const ci = b % loop;
     const rootPc = (tonicPc + prog[ci].r) % 12;
     const tones = chordTones(rootPc, prog[ci].t);
-    const chordSet = scaleSet.filter((x) => tones.includes(x % 12));
+    const chordSet = chordNotesInRange(rootPc, prog[ci].t, sc.melReg[0] - 2, sc.melReg[1]);
+    // над каждым аккордом свой лад: над доминантой альтерация, над минором
+    // дорийский бибоп. Опорные ноты — из аккорда, проходящие — отсюда.
+    const cs = chordScaleNotes(rootPc, prog[ci].t, sc.melReg[0] - 2, sc.melReg[1], sc.chordScales);
+    const weakPool = cs && cs.length > 4 ? cs : scaleSet;
     const n = grid(), g = grid(), c = grid();
     const arch = Math.sin(((b % 8) / 8) * Math.PI);      // подъём к середине фразы
     motif.forEach(([st, len], idx) => {
@@ -275,7 +299,7 @@ function generateTrack(seed, sceneId, opts = {}) {
       const strong = st % 4 === 0;
       const target = sc.melReg[0] + (sc.melReg[1] - sc.melReg[0]) * (0.3 + 0.45 * arch);
       const step = R.weighted(rnd, [[-4, 1], [-3, 2], [-2, 4], [-1, 6], [0, 2], [1, 6], [2, 4], [3, 2], [4, 1]]);
-      const pool = strong || idx === 0 ? chordSet : scaleSet;
+      const pool = strong || idx === 0 ? chordSet : weakPool;
       let cand = lastNote + step * 2;
       cand = cand * 0.72 + target * 0.28;
       let note = snapToSet(cand, pool.filter((x) => x >= sc.melReg[0] - 2 && x <= sc.melReg[1]));
@@ -305,7 +329,7 @@ function generateTrack(seed, sceneId, opts = {}) {
   const meta = {
     seed, sceneId, scene: sc.label, bpm, bars,
     key: pcName(tonicPc) + ' ' + MODE_LABEL[mode],
-    tonic: tonicPc, mode, family, progression: progDef.name,
+    tonic: tonicPc, mode, family, progression: progDef.name, voicedBy,
     chords: prog.map((_, i) => chordName(i)),
     sections,
   };
@@ -324,6 +348,8 @@ const CHORD_LABEL = {
   maj7: 'maj7', maj9: 'maj9', maj69: '6/9', majS11: 'maj7#11', min7: 'm7', min9: 'm9', min11: 'm11',
   min6: 'm6', minMaj7: 'mMaj7', dom7: '7', dom9: '9', dom13: '13', domS9: '7#9', domB9: '7b9',
   domB13: '7b13', m7b5: 'm7b5', dim7: 'dim7', sus2: 'sus2', sus4: 'sus4', sus7: '7sus4', add9: 'add9',
+  domAlt: '7alt', domS11: '7#11', dom13S11: '13#11', dom13B9: '13b9', min69: 'm6/9',
+  sus9: '9sus', sus13: '13sus',
 };
 const MODE_LABEL = {
   ionian: 'ionian', dorian: 'dorian', phrygian: 'phrygian', lydian: 'lydian', mixolydian: 'mixolydian',
@@ -390,6 +416,7 @@ function renderCode(ctx) {
 
   L.push('// ' + meta.scene + ' · ' + meta.key + ' · ' + bpm + ' BPM · seed ' + meta.seed);
   L.push('// ' + meta.progression + ': ' + meta.chords.join(' | '));
+  L.push('// вольтовки: ' + meta.voicedBy + (meta.voicedBy === 'ireal' ? ' (словарь iReal из @strudel/tonal)' : ''));
   L.push('setcps(' + (bpm / 60 / 4).toFixed(5) + ')');
   L.push('');
   L.push('stack(');
@@ -422,6 +449,7 @@ function renderCode(ctx) {
       + '.speed(sine.range(' + (1 - sc.wow).toFixed(4) + ',' + (1 + sc.wow).toFixed(4) + ').slow(9))'
       + '.room(' + room(sc.keyRoom) + ').roomsize(' + f2(2 + space * 4) + ')'
       + '.pan(sine.range(0.42,0.58).slow(23))'
+      + '.off(' + (sc.form === 'ambient' ? '1/6' : '1/8') + ', x => x.add(note(12)).mul(gain(0.22)))'
       + '.nudge(rand.range(-0.004,0.012))'
       + '.postgain(' + gain(sc.keyGain) + ').orbit(3)');
   }
@@ -431,6 +459,7 @@ function renderCode(ctx) {
       'note("' + mini(b.n) + '").gain("' + mini(b.g) + '").clip("' + mini(b.c) + '")')
       + '.s("' + sc.melSound + '")'
       + '.lpf(' + Math.round(2200 + bright * 5000) + ')'
+      + (sc.form === 'ambient' ? '.echo(3, 1/3, 0.45)' : '')
       + '.delay(' + f2(0.22 + space * 0.3) + ').delaytime(' + (60 / bpm * 0.75).toFixed(3) + ').delayfeedback(' + f2(0.28 + space * 0.2) + ')'
       + '.room(' + room(0.55) + ').roomsize(' + f2(3 + space * 4) + ')'
       + '.pan(perlin.range(0.34,0.66).slow(13))'
