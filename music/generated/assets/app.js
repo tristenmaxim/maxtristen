@@ -60,6 +60,7 @@ function buildTrack(inherit) {
   });
   $('code').textContent = state.track.code;
   paintMeta();
+  paintLikes();
   return state.track;
 }
 
@@ -84,9 +85,10 @@ function syncUrl() {
 }
 
 /* ---------- запуск движка ---------- */
-const SAMPLE_PACKS = ['tidal-drum-machines', 'piano', 'vcsl'];
-const GH = 'https://raw.githubusercontent.com/';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const CDN = 'https://cdn.jsdelivr.net/gh/';
+const GH = 'https://raw.githubusercontent.com/';
 // raw.githubusercontent отдаёт файлы медленно и без кэша — переписываем на jsDelivr
 const viaCdn = (url) => {
   if (!url.startsWith(GH)) return url;
@@ -94,12 +96,33 @@ const viaCdn = (url) => {
   return CDN + owner + '/' + repo + '@' + ref + '/' + rest.join('/');
 };
 
+const SAMPLE_PACKS = [
+  CDN + 'felixroos/dough-samples@main/tidal-drum-machines.json',
+  CDN + 'felixroos/dough-samples@main/piano.json',
+  CDN + 'felixroos/dough-samples@main/vcsl.json',
+  CDN + 'eddyflux/crate@main/strudel.json',      // пыльные лоу-фай барабаны
+];
+
 const packMaps = {};
-async function loadPack(name) {
-  const map = await fetch(CDN + 'felixroos/dough-samples@main/' + name + '.json').then((r) => r.json());
+async function loadPack(url) {
+  const map = await fetch(url).then((r) => r.json());
   if (map._base) map._base = viaCdn(map._base);
-  packMaps[name] = map;
+  packMaps[url] = map;
   return window.samples(map);
+}
+
+function boot() {
+  if (state.booted) return Promise.resolve();
+  if (state.booting) return state.booting;
+  state.booting = (async () => {
+    await window.initStrudel({
+      prebake: () => Promise.all(SAMPLE_PACKS.map((u) =>
+        loadPack(u).catch((e) => console.warn('пак не загрузился:', u, e)))),
+    });
+    for (let i = 0; i < 100 && typeof window.evaluate !== 'function'; i++) await sleep(50);
+    state.booted = true;
+  })();
+  return state.booting;
 }
 
 /* Разбор имён вида C4 / A#3 / Ds1 в MIDI. */
@@ -112,32 +135,42 @@ function keyToMidi(k) {
   return (parseInt(m[3], 10) + 1) * 12 + pc;
 }
 
-/* Находим файлы для нужного инструмента и нужного участка диапазона. */
-function urlsFor(instrument, notes, limit) {
+/* Файлы инструмента. Имя может быть с индексом: crate_bd:37 — тогда нужен
+   ровно этот файл, у крейта их полсотни на слот. */
+function urlsFor(name, notes, limit) {
+  const [base, idxStr] = String(name).split(':');
+  const idx = idxStr === undefined ? null : parseInt(idxStr, 10);
   for (const map of Object.values(packMaps)) {
-    const entry = map[instrument];
+    const entry = map[base];
     if (!entry) continue;
-    const base = map._base || '';
-    if (Array.isArray(entry)) return entry.slice(0, limit).map((f) => base + f);
+    const pre = map._base || '';
+    if (Array.isArray(entry)) {
+      if (idx !== null) return entry[idx % entry.length] ? [pre + entry[idx % entry.length]] : [];
+      return entry.slice(0, limit).map((f) => pre + f);
+    }
     const items = Object.entries(entry)
       .map(([k, v]) => ({ midi: keyToMidi(k), file: Array.isArray(v) ? v[0] : v }))
       .filter((x) => x.midi !== null);
     if (!items.length) return [];
     const dist = (x) => Math.min(...notes.map((n) => Math.abs(n - x.midi)));
-    return items.sort((a, b) => dist(a) - dist(b)).slice(0, limit).map((x) => base + x.file);
+    return items.sort((a, b) => dist(a) - dist(b)).slice(0, limit).map((x) => pre + x.file);
   }
   return [];
 }
 
-/* Прогрев: кладём сэмплы в HTTP-кэш браузера, музыка при этом не прерывается. */
+/* Прогрев: кладём сэмплы в HTTP-кэш браузера, музыка при этом не прерывается.
+   Имена берём прямо из сгенерированного кода, чтобы ничего не забыть. */
 const warmed = new Set();
-async function warmSamples(sceneId, notes, budget = 4000) {
-  const sc = SCENES[sceneId];
+async function warmSamples(track, budget = 4000) {
+  const code = track.code;
   const urls = new Set();
-  urlsFor(sc.keySound, notes, 6).forEach((u) => urls.add(u));
-  urlsFor(sc.melSound, notes, 5).forEach((u) => urls.add(u));
-  if (sc.drums) for (const slot of ['bd', 'sd', 'hh', 'oh', 'rim', 'perc'])
-    urlsFor(sc.drums.bank + '_' + slot, notes, 1).forEach((u) => urls.add(u));
+  const drums = new Set();
+  for (const m of code.matchAll(/\bs\("([^"]+)"\)/g))
+    for (const tok of m[1].split(/\s+/)) if (tok && tok !== '~' && !/^[<>\[\]]/.test(tok)) drums.add(tok);
+  drums.forEach((d) => urlsFor(d, track.notesUsed, 1).forEach((u) => urls.add(u)));
+  for (const m of code.matchAll(/\.s\("([^"]+)"\)/g))
+    urlsFor(m[1], track.notesUsed, 6).forEach((u) => urls.add(u));
+
   const todo = [...urls].filter((u) => !warmed.has(u));
   if (!todo.length) return;
   todo.forEach((u) => warmed.add(u));
@@ -147,22 +180,6 @@ async function warmSamples(sceneId, notes, budget = 4000) {
     sleep(budget),
   ]);
 }
-
-function boot() {
-  if (state.booted) return Promise.resolve();
-  if (state.booting) return state.booting;
-  state.booting = (async () => {
-    await window.initStrudel({
-      prebake: () => Promise.all(SAMPLE_PACKS.map((n) =>
-        loadPack(n).catch((e) => console.warn('пак не загрузился:', n, e)))),
-    });
-    for (let i = 0; i < 100 && typeof window.evaluate !== 'function'; i++) await sleep(50);
-    state.booted = true;
-  })();
-  return state.booting;
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- транспорт ---------- */
 async function startTrack() {
@@ -183,7 +200,7 @@ async function startTrackInner() {
   if (!state.track || state.track.meta.voicedBy !== 'ireal') buildTrack();
   const track = state.track;
   $('status').textContent = 'Подгружаю инструменты…';
-  await warmSamples(state.scene, track.notesUsed);
+  await warmSamples(track);
   await window.evaluate(track.code, true);
   state.cps = track.meta.bpm / 60 / 4;
   state.t0 = window.getAudioContext().currentTime;
@@ -212,6 +229,34 @@ $('regen').onclick = () => {
   if (state.playing) restartSeamless();
 };
 
+/* Отметки «нравится» копятся в браузере: по ним видно, что общего у треков,
+   которые реально слушают — темп, лад, грув, набор барабанов. */
+const LIKES_KEY = 'maxtristen-music-likes';
+function readLikes() {
+  try { return JSON.parse(localStorage.getItem(LIKES_KEY) || '[]'); } catch (e) { return []; }
+}
+function paintLikes() {
+  const n = readLikes().length;
+  $('like-count').textContent = n ? String(n) : '';
+  const liked = readLikes().some((x) => x.seed === state.seed && x.scene === state.scene);
+  $('like').classList.toggle('on', liked);
+}
+$('like').onclick = () => {
+  const m = state.track.meta;
+  let likes = readLikes();
+  const i = likes.findIndex((x) => x.seed === m.seed && x.scene === m.sceneId);
+  if (i >= 0) likes.splice(i, 1);
+  else likes.push({
+    seed: m.seed, scene: m.sceneId, key: m.key, bpm: m.bpm, groove: m.groove,
+    kit: m.kit, phraseLen: m.phraseLen, bassStyle: m.bassStyle,
+    progression: m.progression, chords: m.chords, at: new Date().toISOString(),
+  });
+  likes = likes.slice(-300);
+  try { localStorage.setItem(LIKES_KEY, JSON.stringify(likes)); } catch (e) {}
+  paintLikes();
+  $('status').textContent = i >= 0 ? 'Убрал из отмеченных.' : 'Отмечено. Всего: ' + likes.length;
+};
+
 $('share').onclick = async () => {
   syncUrl();
   try { await navigator.clipboard.writeText(location.href); $('status').textContent = 'Ссылка на этот трек скопирована.'; }
@@ -229,7 +274,7 @@ $('codetoggle').onclick = () => {
 /* Смена сцены на ходу: сначала тихо тянем новые сэмплы, потом подменяем паттерн. */
 async function switchLive() {
   $('status').textContent = 'Подгружаю инструменты…';
-  await warmSamples(state.scene, state.track.notesUsed);
+  await warmSamples(state.track);
   await restartSeamless();
   $('status').textContent = 'Играет. Трек пересобирается каждые ' + BARS + ' тактов.';
 }
@@ -287,9 +332,16 @@ const SECTION_RU = { intro: 'вступление', A: 'основная', B: '�
 async function nextTrack() {
   const prev = state.track.meta;
   state.seed = (Math.random() * 1e9) | 0;
-  buildTrack({ bpm: prev.bpm, tonic: prev.tonic, mode: prev.mode, family: prev.family });
+  // сет держит одну гармонию две аранжировки подряд и только на третьей
+  // уходит в новую — иначе каждые полторы минуты начинается другая пьеса
+  state.setPos = ((state.setPos || 0) + 1) % 3;
+  const keepProg = state.setPos !== 0;
+  buildTrack({
+    bpm: prev.bpm, tonic: prev.tonic, mode: prev.mode, family: prev.family, hard: keepProg,
+    progDef: keepProg ? prev.progDef : null, prog: keepProg ? prev.prog : null,
+  });
   syncUrl();
-  warmSamples(state.scene, state.track.notesUsed);
+  warmSamples(state.track);
   state.cps = state.track.meta.bpm / 60 / 4;
   await window.evaluate(state.track.code, true);
 }

@@ -324,3 +324,37 @@ function chordNotesInRange(rootPc, type, lo, hi) {
   for (let n = lo; n <= hi; n++) if (tones.includes(((n % 12) + 12) % 12)) out.push(n);
   return out;
 }
+
+/* ---------- грув ----------
+   Постоянные микросдвиги и акценты по позициям сетки. Именно постоянство
+   даёт ощущение сыгранности: случайный сдвиг на каждой ноте слышится не как
+   грув, а как неаккуратность. Числа — доля свинга и смещения в секундах. */
+
+const GROOVE_TEMPLATES = {
+  straight: { swing: 0.50, drunk: 0.000, snareLate: 0.000, hatEarly: 0.000 },
+  light:    { swing: 0.545, drunk: 0.002, snareLate: 0.006, hatEarly: -0.003 },
+  mpc:      { swing: 0.575, drunk: 0.003, snareLate: 0.012, hatEarly: -0.005 },
+  hard:     { swing: 0.615, drunk: 0.004, snareLate: 0.016, hatEarly: -0.006 },
+  dilla:    { swing: 0.60, drunk: 0.009, snareLate: 0.026, hatEarly: -0.009 },
+  laidback: { swing: 0.555, drunk: 0.005, snareLate: 0.020, hatEarly: 0.004 },
+};
+
+/* Возвращает таблицу на 16 шестнадцатых: t — сдвиг в секундах, a — множитель
+   громкости. Одна и та же на весь трек, поэтому повторяется из такта в такт. */
+function makeGroove(rnd, bpm, name) {
+  const tpl = GROOVE_TEMPLATES[name] || GROOVE_TEMPLATES.mpc;
+  const eighth = 60 / bpm / 2;                 // длительность восьмой
+  const swingShift = (tpl.swing - 0.5) * eighth;
+  const t = [], a = [];
+  for (let i = 0; i < 16; i++) {
+    let dt = i % 2 === 1 ? swingShift : 0;      // свинг: нечётные шестнадцатые позже
+    dt += (rnd() * 2 - 1) * tpl.drunk;          // «характер машины» — свой, но постоянный
+    if (i === 4 || i === 12) dt += tpl.snareLate;
+    if (i % 4 === 2) dt += tpl.hatEarly;
+    t.push(dt);
+    let g = i % 4 === 0 ? 1 : i % 4 === 2 ? 0.86 : 0.72;
+    if (i === 0) g = 1.06;
+    a.push(g * (0.97 + rnd() * 0.06));
+  }
+  return { t, a, name };
+}
