@@ -125,8 +125,23 @@ const MOTIFS = [
 
 /* ---------- вспомогалки для мини-нотации ---------- */
 
+let COMPACT_SCORE = true;
+
 const grid = (n = 16) => new Array(n).fill(null);
-const mini = (cells) => cells.map((c) => (c === null || c === undefined ? '~' : c)).join(' ');
+// Повторы схлопываем через !n — так строка такта читается глазами,
+// а не разбирается по буквам: "bd ~!7 bd ~!7" вместо шестнадцати позиций.
+const mini = (cells) => {
+  const t = cells.map((c) => (c === null || c === undefined ? '~' : String(c)));
+  if (!COMPACT_SCORE) return t.join(' ');
+  const out = [];
+  for (let i = 0; i < t.length;) {
+    let j = i;
+    while (j < t.length && t[j] === t[i]) j++;
+    out.push(j - i > 1 ? t[i] + '!' + (j - i) : t[i]);
+    i = j;
+  }
+  return out.join(' ');
+};
 const isEmpty = (cells) => cells.every((c) => c === null || c === undefined);
 const f2 = (x) => (Math.abs(x) < 0.1 ? Number(x).toFixed(4) : Number(x).toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
 
@@ -472,7 +487,16 @@ function generateTrack(seed, sceneId, opts = {}) {
     tex: opts.texture ?? 0.35,
   });
 
-  return { code, meta, notesUsed: collectNotes({ bassBars, keyBars, melBars, counterBars, padBars }) };
+  // сетки для визуализации: что и с какой силой звучит на каждом шаге такта
+  const rowOf = (arr, key) => arr.map((b) => (b ? (b[key] || b.g).map((x) => (x === null ? 0 : Math.min(1, Number(x)))) : new Array(16).fill(0)));
+  const grid16 = {
+    rows: [
+      ['кик', kickBars], ['мал', snareBars], ['хэт', hatBars], ['прк', percBars],
+      ['бас', bassBars], ['гарм', keyBars], ['мел', melBars], ['2-й', counterBars],
+    ].filter(([, arr]) => arr.some(Boolean)).map(([name, arr]) => ({ name, bars: rowOf(arr, 'g') })),
+  };
+
+  return { code, meta, grid: grid16, notesUsed: collectNotes({ bassBars, keyBars, melBars, counterBars, padBars }) };
 }
 
 const CHORD_LABEL = {
@@ -531,9 +555,34 @@ function collectNotes({ bassBars, keyBars, melBars, counterBars, padBars }) {
 
 /* ---------- печать кода Strudel ---------- */
 
+/* Партитура пишется компактно: одинаковые такты не дублируются, а собираются
+   в список, поверх которого идёт последовательность номеров. Так видно
+   структуру — где фраза повторяется, где приходит новый такт. */
+const rle = (idx) => {
+  const out = [];
+  for (let i = 0; i < idx.length;) {
+    let j = i;
+    while (j < idx.length && idx[j] === idx[i]) j++;
+    out.push(j - i > 1 ? idx[i] + '!' + (j - i) : String(idx[i]));
+    i = j;
+  }
+  return out.join(' ');
+};
+
 function catOf(items, fn) {
   const parts = items.map((it) => (it === null ? 'silence' : fn(it)));
-  return 'cat(\n    ' + parts.join(',\n    ') + '\n  )';
+  if (!COMPACT_SCORE) return 'cat(\n    ' + parts.join(',\n    ') + '\n  )';
+
+  const uniq = [];
+  const idx = parts.map((r) => {
+    let i = uniq.indexOf(r);
+    if (i < 0) { i = uniq.length; uniq.push(r); }
+    return i;
+  });
+  if (uniq.length === 1) return uniq[0];                       // такт один на всю дорогу
+  if (uniq.length > parts.length * 0.7) return 'cat(\n    ' + parts.join(',\n    ') + '\n  )';
+  const body = uniq.map((u, i) => '    /*' + i + '*/ ' + u).join(',\n');
+  return 'pick([\n' + body + '\n  ], "<' + rle(idx) + '>")';
 }
 
 function renderCode(ctx) {

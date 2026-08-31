@@ -430,3 +430,77 @@ setInterval(tick, 200);
 renderScenes();
 buildTrack();
 syncUrl();
+
+/* ---------- сетка «что играет сейчас» ----------
+   Рисуем из данных генератора, а не через punchcard() из Strudel: в сборке
+   @strudel/web он регистрируется, но не рисует — цикл отрисовки даёт REPL,
+   которого у нас нет. Зато свои сетки тактов у нас и так лежат готовые. */
+(function punch() {
+  const cv = $('punch');
+  const g = cv.getContext('2d');
+  const LABEL = 38;
+  let W = 0, H = 0, dpr = 1;
+
+  const resize = () => {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  addEventListener('resize', resize);
+
+  function draw() {
+    requestAnimationFrame(draw);
+    if (!state.track || !state.track.grid) return;
+    if (cv.clientWidth !== W || cv.clientHeight !== H) resize();
+    if (!W) return;
+
+    const rows = state.track.grid.rows;
+    const n = rows.length;
+    const rowH = H / n;
+    const cellW = (W - LABEL) / 16;
+
+    let bar = 0, step = 0, pos = 0;
+    if (state.playing) {
+      const cycle = (window.getAudioContext().currentTime - state.t0) * state.cps;
+      const c = Math.max(0, cycle);
+      bar = Math.floor(c) % BARS;
+      pos = c - Math.floor(c);
+      step = Math.floor(pos * 16);
+    }
+
+    g.clearRect(0, 0, W, H);
+    g.font = '9px ui-monospace, Menlo, monospace';
+    g.textBaseline = 'middle';
+
+    for (let r = 0; r < n; r++) {
+      const y = r * rowH;
+      g.fillStyle = 'rgba(139,142,149,.75)';
+      g.fillText(rows[r].name, 0, y + rowH / 2);
+      const cells = rows[r].bars[bar] || [];
+      for (let c = 0; c < 16; c++) {
+        const v = cells[c] || 0;
+        const x = LABEL + c * cellW;
+        const h = Math.max(3, rowH - 5);
+        const w = Math.max(2, cellW - 3);
+        if (v > 0) {
+          const live = state.playing && c === step;
+          g.fillStyle = live
+            ? 'rgba(236,231,223,' + (0.55 + v * 0.45).toFixed(2) + ')'
+            : 'rgba(217,179,130,' + (0.18 + v * 0.62).toFixed(2) + ')';
+        } else {
+          g.fillStyle = c % 4 === 0 ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.035)';
+        }
+        g.fillRect(x, y + 2.5, w, h);
+      }
+    }
+
+    if (state.playing) {
+      const x = LABEL + pos * (W - LABEL);
+      g.fillStyle = 'rgba(217,179,130,.45)';
+      g.fillRect(x, 0, 1, H);
+    }
+  }
+  resize();
+  draw();
+})();
