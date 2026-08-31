@@ -309,6 +309,7 @@ bindKnob('k-texture', 'texture');
 
 /* ---------- часы аранжировки ---------- */
 function tick() {
+  updateLive();                      // живой режим обновляем и на паузе
   if (!state.playing || !state.track) return;
   const ctx = window.getAudioContext();
   const cycle = (ctx.currentTime - state.t0) * state.cps;
@@ -436,8 +437,8 @@ syncUrl();
    @strudel/web он регистрируется, но не рисует — цикл отрисовки даёт REPL,
    которого у нас нет. Зато свои сетки тактов у нас и так лежат готовые. */
 (function punch() {
-  const cv = $('punch');
-  const g = cv.getContext('2d');
+  let cv = $('punch');
+  let g = cv.getContext('2d');
   const LABEL = 38;
   let W = 0, H = 0, dpr = 1;
 
@@ -452,6 +453,8 @@ syncUrl();
   function draw() {
     requestAnimationFrame(draw);
     if (!state.track || !state.track.grid) return;
+    const want = state.live ? $('live-punch') : $('punch');
+    if (want !== cv) { cv = want; g = cv.getContext('2d'); W = 0; }
     if (cv.clientWidth !== W || cv.clientHeight !== H) resize();
     if (!W) return;
 
@@ -504,3 +507,123 @@ syncUrl();
   resize();
   draw();
 })();
+
+/* ---------- живой режим ----------
+   Партитуру мы печатаем сами и формат знаем, поэтому можем подсвечивать
+   такт, который звучит прямо сейчас: у каждого pick() есть список вариантов
+   и последовательность номеров — остаётся сопоставить её с номером такта. */
+
+const KNOBS = [
+  ['master', 'громкость'], ['intensity', 'плотность'], ['brightness', 'яркость'],
+  ['space', 'пространство'], ['texture', 'шум'],
+];
+
+/* Разбор "0!4 1 2" в [0,0,0,0,1,2]. */
+function expandSeq(str) {
+  const out = [];
+  for (const tok of str.trim().split(/\s+/)) {
+    const [v, n] = tok.split('!');
+    for (let i = 0; i < (n ? +n : 1); i++) out.push(+v);
+  }
+  return out;
+}
+
+/* Строки партитуры + группы вариантов, которые надо подсвечивать. */
+function parseScore(code) {
+  const lines = code.split('\n');
+  const groups = [];
+  let pending = [];
+  lines.forEach((l, i) => {
+    const v = /^\s{4}\/\*(\d+)\*\//.exec(l);
+    if (v) { pending.push(i); return; }
+    const q = /\], "<([^"]+)>"\)/.exec(l);
+    if (q && pending.length) { groups.push({ lines: pending, seq: expandSeq(q[1]) }); pending = []; }
+  });
+  return { lines, groups };
+}
+
+let liveScore = null;
+function renderLive() {
+  if (!state.live || !state.track) return;
+  liveScore = parseScore(state.track.code);
+  const box = $('live-code');
+  box.innerHTML = '';
+  const varLine = new Set();
+  liveScore.groups.forEach((g) => g.lines.forEach((i) => varLine.add(i)));
+  liveScore.lineEls = [];
+  liveScore.lines.forEach((text, i) => {
+    const el = document.createElement('div');
+    el.className = 'ln ' + (varLine.has(i) ? 'var' : /^\s*\/\//.test(text) ? 'cmt' : /"<[^"]+>"/.test(text) ? 'seq' : '');
+    el.textContent = text || ' ';
+    box.appendChild(el);
+    liveScore.lineEls.push(el);
+  });
+}
+
+function renderLiveKnobs() {
+  const box = $('live-knobs');
+  box.innerHTML = '';
+  for (const [key, label] of KNOBS) {
+    const row = document.createElement('label');
+    row.className = 'lknob';
+    row.innerHTML = '<span class="cm">//</span><span class="nm"></span>'
+      + '<input type="range" min="0" max="100"><span class="vl"></span>';
+    row.querySelector('.nm').textContent = label;
+    const inp = row.querySelector('input'), out = row.querySelector('.vl');
+    inp.value = Math.round(state.params[key] * 100);
+    out.textContent = inp.value + '%';
+    inp.oninput = () => {
+      state.params[key] = inp.value / 100;
+      out.textContent = inp.value + '%';
+      const twin = $('k-' + key);
+      if (twin) { twin.value = inp.value; $('v-' + key).textContent = inp.value + '%'; }
+      clearTimeout(knobTimer);
+      knobTimer = setTimeout(() => { buildTrack(); if (state.playing) restartSeamless(); }, 260);
+    };
+    box.appendChild(row);
+  }
+}
+
+function openLive() {
+  state.live = true;
+  $('live').classList.remove('hidden');
+  renderLiveKnobs();
+  renderLive();
+  liveLastBar = -1;
+  updateLive();
+}
+function closeLive() {
+  state.live = false;
+  $('live').classList.add('hidden');
+}
+
+$('live-open').onclick = openLive;
+$('live-exit').onclick = closeLive;
+$('live-next').onclick = () => $('regen').click();
+$('live-play').onclick = () => $('play').click();
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.live) closeLive(); });
+
+/* Подсветка звучащего такта. Гоняем от того же таймера, что считает такты:
+   requestAnimationFrame засыпает вместе со вкладкой, а музыка играет дальше. */
+let liveLastBar = -1, liveLastCode = '';
+function updateLive() {
+  if (!state.live || !state.track) return;
+  if (state.track.code !== liveLastCode) { liveLastCode = state.track.code; renderLive(); liveLastBar = -1; }
+  if (!liveScore) return;
+
+  const m = state.track.meta;
+  let bar = 0;
+  if (state.playing) {
+    const c = Math.max(0, (window.getAudioContext().currentTime - state.t0) * state.cps);
+    bar = Math.floor(c) % BARS;
+  }
+  $('live-meta').textContent = m.key + ' · ' + m.bpm + ' BPM · ' + m.groove
+    + ' · такт ' + (bar + 1) + '/' + BARS + ' · ' + (SECTION_RU[m.sections[bar].name] || '');
+  $('live-play').textContent = state.playing ? 'пауза' : 'играть';
+  if (bar === liveLastBar) return;
+  liveLastBar = bar;
+  for (const g of liveScore.groups) {
+    const active = g.lines[g.seq[bar % g.seq.length]];
+    for (const i of g.lines) liveScore.lineEls[i].classList.toggle('on', i === active);
+  }
+}
