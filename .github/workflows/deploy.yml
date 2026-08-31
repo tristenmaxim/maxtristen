@@ -46,9 +46,10 @@ jobs:
             venv/bin/pip install -q -r requirements.txt
             cd /opt/maxtristen
 
-            # downloader backend: node deps
+            # downloader backend: node deps + yt-dlp impersonation support
             cd downloader/backend
             npm ci --omit=dev
+            python3 -m pip install -q -U --break-system-packages yt-dlp curl_cffi
             cd /opt/maxtristen
 
             # analyzer backend: venv + deps

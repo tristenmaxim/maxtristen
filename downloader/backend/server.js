@@ -194,6 +194,8 @@ function downloadVideo(finalUrl, videoId) {
       "bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]/best",
       "--merge-output-format",
       "mp4",
+      "--impersonate",
+      "chrome",
       "-o",
       outputTemplate,
       "--print",
