@@ -537,7 +537,7 @@ function toggleTrackList() {
         renderTrackList(); // Load track names dynamically
     } else {
         container.classList.add('hidden');
-        button.textContent = 'Tracks';
+        button.textContent = 'Show Tracks';
     }
 }
 
