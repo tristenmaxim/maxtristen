@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ТЭЦ-1 — DIY-увлажнитель воздуха в виде настоящей ТЭЦ: градирня, дымовая труба, главный корпус. Модель, расчёт, детали, сборка.">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+<title>Увлажнитель «Труба ТЭЦ»</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: карточка товара (галерея + покупка), ниже — паспорт изделия одной колонкой */
+:root {
+  --bg: #eceeed; --panel: #f7f8f7; --fg: #1b1e21; --muted: #5c646b; --line: #c9cfcf; --red: #b0301f; --white: #f4f3ee;
+  --photo: #1a1e24;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "PT Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15181b; --panel: #1d2125; --fg: #e7e9ea; --muted: #9aa3aa; --line: #343a40; --red: #e0533d; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #15181b; --panel: #1d2125; --fg: #e7e9ea; --muted: #9aa3aa; --line: #343a40; --red: #e0533d; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 17px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 56px; }
+.doc { max-width: 900px; width: 100%; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h2 { font-size: clamp(19px, 2.4vw, 24px); font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--red); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.label { font: 600 12px/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); font-size: 15px; }
+.mono { font-family: var(--mono); font-size: 0.9em; }
+.stripes { height: 10px; background: repeating-linear-gradient(90deg, var(--red) 0 48px, var(--white) 48px 96px); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); }
+section { display: grid; gap: 16px; }
+
+/* product card */
+.product { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: start; padding-top: 32px; }
+.gallery { display: grid; gap: 12px; min-width: 0; }
+.stage { position: relative; aspect-ratio: 3 / 4; width: min(100%, calc(84vh * 3 / 4)); justify-self: center; max-width: 100%; border-radius: 12px; overflow: hidden; background: var(--photo); }
+.stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.viewer { position: absolute; inset: 0; background: radial-gradient(110% 80% at 50% 40%, #2a313b 0%, #12151a 100%); }
+.viewer [hidden], .stage [hidden] { display: none !important; }
+.badge { position: absolute; top: 14px; left: 14px; font: 600 12px var(--body); color: #e7e9ea; background: rgba(15,18,22,.62); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 5px 11px; pointer-events: none; backdrop-filter: blur(6px); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 14px var(--mono); color: #9aa3aa; pointer-events: none; }
+.thumbs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.thumb { flex: 0 0 auto; width: 76px; display: grid; gap: 5px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--muted); font: 12px var(--body); text-align: center; }
+.thumb img, .thumb i { width: 76px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--line); display: grid; place-items: center; background: var(--photo); color: #e7e9ea; font: 700 15px var(--display); font-style: normal; }
+.thumb[aria-pressed="true"] img, .thumb[aria-pressed="true"] i { border-color: var(--fg); }
+.thumb[aria-pressed="true"] { color: var(--fg); }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: center; justify-self: center; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; max-width: 100%; }
+.toolbar button { font: 600 13px var(--body); padding: 8px 14px; border-radius: 999px; border: 0; background: transparent; color: var(--fg); cursor: pointer; white-space: nowrap; }
+.toolbar button:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.toolbar button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.hotspots { position: absolute; inset: 0; pointer-events: none; }
+.hs { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 2px solid #fff; background: #c8392a; color: #fff; font: 700 12px/22px var(--mono); text-align: center; cursor: pointer; pointer-events: auto; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+.card { position: absolute; top: 14px; right: 14px; width: min(290px, calc(100% - 28px)); padding: 14px 16px; border-radius: 10px; display: grid; gap: 6px; background: rgba(250,250,250,.94); color: #1b1e21; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+.card b { font-family: var(--display); font-weight: 500; font-size: 15px; }
+.card span { font-size: 14px; color: #4b535a; line-height: 1.45; }
+.card button { justify-self: start; font: 600 12px var(--mono); padding: 4px 0; border: 0; background: none; color: #b0301f; cursor: pointer; }
+
+.buybox { display: grid; gap: 20px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); min-width: 0; }
+.buybox h1 { font-size: clamp(40px, 5vw, 60px); }
+.sub { color: var(--muted); }
+.price { display: grid; gap: 2px; padding-block: 14px; border-block: 1px solid var(--line); }
+.price b { font: 700 32px/1.1 var(--display); }
+.price span { font-size: 14px; color: var(--muted); }
+.feats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.feats li { display: grid; gap: 2px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.feats b { font-size: 15px; }
+.feats span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.keyspecs { margin: 0; display: grid; }
+.keyspecs div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--line); font-size: 15px; }
+.keyspecs dt { color: var(--muted); }
+.keyspecs dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* passport */
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; max-width: 72ch; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; }
+ol.steps li::before { content: counter(s); font: 600 13px/26px var(--mono); text-align: center; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 50%; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 72ch; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+tfoot td { font-weight: 700; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px; border: 1px solid var(--line); vertical-align: -1px; margin-right: 6px; }
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.why div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.why span { font-size: 15px; color: var(--muted); }
+.figure { display: grid; gap: 8px; }
+.figure img { width: 100%; border-radius: 10px; display: block; }
+.warn { border-left: 4px solid var(--red); padding: 12px 16px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.files { display: grid; gap: 6px; font: 14px var(--mono); }
+.files div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 9px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
+.files div span:first-child { overflow-wrap: anywhere; }
+.files div span:last-child { color: var(--muted); font-family: var(--body); }
+@media (max-width: 900px) { .product { grid-template-columns: minmax(0, 1fr); } .buybox { position: static; } }
+@media (max-width: 640px) { .why, .feats { grid-template-columns: minmax(0, 1fr); } .files div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+</style>
+</head>
+<body>
+
+
+<div class="stripes" aria-hidden="true"></div>
+<main class="wrap">
+  <section class="product">
+    <div class="gallery">
+      <div class="stage" id="stage">
+        <img id="photo" alt="ТЭЦ-1, общий вид">
+        <div class="viewer" id="viewer" hidden>
+          <div class="loading" id="loading">Загружаю 3D…</div>
+          <div class="hotspots" id="hotspots" hidden></div>
+          <div class="card" id="card" hidden><b id="card-t"></b><span id="card-d"></span><button id="card-x">Закрыть</button></div>
+        </div>
+        <span class="badge" id="badge">Фото · рендер Cycles</span>
+      </div>
+      <div class="toolbar" id="toolbar" hidden>
+        <button id="b-explode" aria-pressed="false">Разобрать</button>
+        <button id="b-cut" aria-pressed="false">Разрез</button>
+        <button id="b-mist" aria-pressed="true">Пар</button>
+        <button id="b-hints" aria-pressed="false">Подсказки</button>
+        <button id="b-full">Во весь экран</button>
+      </div>
+      <div class="thumbs" id="thumbs" aria-label="Фото и 3D"></div>
+    </div>
+
+    <aside class="buybox">
+      <div class="label">DIY · ультразвуковой увлажнитель</div>
+      <h1>ТЭЦ-1</h1>
+      <p class="sub">Увлажнитель воздуха в виде настоящей теплоэлектроцентрали: градирня, дымовая труба, главный корпус. Масштаб 1:500. Пар идёт из градирни — как на настоящей станции.</p>
+      <div class="price"><b>≈ 3 340 ₽</b><span>покупные детали + ≈870 г пластика PETG</span></div>
+      <ul class="feats">
+        <li><b>Пар из градирни</b><span>Основной поток — из градирни, тонкая струйка — из трубы</span></li>
+        <li><b>2,3 л воды</b><span>≈4 часа на одной заправке</span></li>
+        <li><b>24 В внутри</b><span>Сетевое напряжение только в блоке питания</span></li>
+        <li><b>Как настоящая</b><span>Пропорции и маркировка по нормам и прототипам</span></li>
+      </ul>
+      <dl class="keyspecs">
+        <div><dt>Габариты</dt><dd>212 × 196 × 456 мм</dd></div>
+        <div><dt>Масштаб</dt><dd>1:500</dd></div>
+        <div><dt>Туман</dt><dd>&gt;400 мл/ч, 1,7 МГц</dd></div>
+        <div><dt>Питание</dt><dd>24 В, ≈20 Вт</dd></div>
+        <div><dt>Печать</dt><dd>13 деталей, PETG</dd></div>
+      </dl>
+    </aside>
+  </section>
+
+  <div class="doc">
+  <section>
+    <div class="label">Как работает</div>
+    <h2>Вода → туман → воздух выносит его наружу</h2>
+    <ol class="steps">
+      <li><span>Основание — это бак на 2,3 л. На дне, под градирней, лежит ультразвуковой туманообразователь. Он превращает воду в мелкий туман.</span></li>
+      <li><span>Вентилятор под крышей котельной дует вниз, в бак. Воздуху некуда деться, кроме как наружу через градирню и трубу.</span></li>
+      <li><span>Почти весь туман выходит из широкого горла градирни, примерно 4 % — из трубы. На настоящей ТЭЦ так же: белые облака идут от градирен.</span></li>
+      <li><span>Электрика спрятана в машинном зале — это сухой отсек, к воде он не открыт.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="label">Где провода</div>
+    <h2>Электрика в разрезе</h2>
+    <figure class="figure" style="margin:0"><img id="inside" alt="Разрез: бак с туманообразователем, электроника в машинном зале, провода"></figure>
+    <ol class="steps">
+      <li><span>Блок питания 24 В стоит снаружи. Его кабель входит в гнездо в торце машинного зала.</span></li>
+      <li><span>Гнездо → выключатель в той же стене → дальше два пути.</span></li>
+      <li><span>Первый: кабель туманообразователя уходит через отверстие в плите вниз, в бак, к прибору под градирней.</span></li>
+      <li><span>Второй: плата LM2596 понижает 24 В до 7–12 В, и провода идут через стену в котельную к вентилятору.</span></li>
+      <li><span>Оба отверстия для проводов заливаются силиконом: в баке влажно и чуть выше давление.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="label">Расчёт</div>
+    <h2>Пар выйдет, если плита уплотнена</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Что считали</th><th>Результат</th><th>Вывод</th></tr></thead>
+      <tbody>
+        <tr><td>Размер капель при 1,7 МГц</td><td class="num">≈3 мкм</td><td>Падают со скоростью 0,26 мм/с — поток воздуха уносит их без труда</td></tr>
+        <tr><td>Поток воздуха</td><td class="num">1–3 л/с</td><td>Вентилятор 4010 на 12 В даёт до 3,6 л/с и ~30 Па, сопротивление выхода меньше 2 Па</td></tr>
+        <tr><td>Скорость в горле градирни Ø74 мм</td><td class="num">0,25–0,7 м/с</td><td>Медленный подъём, как у настоящей градирни. Вентилятор лучше держать на полных 12 В</td></tr>
+        <tr><td>Доля через трубу</td><td class="num">≈4 %</td><td>Площадь устья 181 мм² против 4300 мм² у градирни: из трубы — тонкая струйка</td></tr>
+        <tr><td>Струя над градирней</td><td class="num">5–20 см</td><td>Туман на 3–9 % тяжелее воздуха. На слабом вентиляторе он переливается через край и стекает по стенке</td></tr>
+        <tr><td>Щель 0,3 мм под плитой</td><td class="num">≈200 мм²</td><td>Сравнима с устьем трубы. Без уплотнителя часть тумана уйдёт по краю основания</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="label">Почему так</div>
+    <h2>ТЭЦ как настоящая</h2>
+    <div class="why">
+      <div><b>Масштаб 1:500</b><span>В масштабе 1:300 градирня была бы 40 см в диаметре и не влезла бы в принтер. В 1:500 всё помещается на основание 212×196 мм.</span></div>
+      <div><b>Труба — Петропавловская ТЭЦ-2</b><span>Высота 180 м, Ø 20,5 м внизу и 9,2 м вверху. Уклон ствола 0,031.</span></div>
+      <div><b>Градирня — типовая, 90 м</b><span>Гиперболоид: Ø 60 м у основания, горловина 35 м на высоте 3/4. Внизу — наклонные колонны, вверху — кольцевая балка. Пропорции типовые, без конкретного прототипа.</span></div>
+      <div><b>Маркировка по ФАП-119</b><span>Трубу выше 100 м красят целиком, 7 полос по 1/7 высоты, крайние красные. Огни ярусами через 45 м.</span></div>
+      <div><b>Главный корпус</b><span>Машинный зал с высокими окнами и котельная с ленточными окнами, как в типовых советских ТЭЦ.</span></div>
+      <div><b>Газоход на эстакаде</b><span>Короб от котельной к трубе. На станции по нему идут дымовые газы, здесь — для узнаваемости.</span></div>
+    </div>
+    <p class="muted">Источники: СП 43.13330.2012 п. 9.3.41; СНиП 2.09.03-85 п. 19.3; ФАП «Размещение маркировочных знаков…», приказ Росаэронавигации №119 от 28.11.2007, п. 2.6, 3.4; размеры трубы — kazpravda.kz.</p>
+  </section>
+
+  <section>
+    <div class="label">Что купить · цены на 21.10.2026</div>
+    <h2>Покупные детали ≈ 3 340 ₽</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Деталь</th><th>Где</th><th>Цена, ₽</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.ozon.ru/product/45-mm-dc-24-v-ultrazvukovoy-tumanoobrazovatel-uvlazhnitel-vozduha-s-vilkoy-es-1889248842/" target="_blank" rel="noopener">Туманообразователь 45 мм, 24 В, 19 Вт</a><br><span class="muted">&gt;400 мл/ч, работает при воде 20–75 мм, сам выключается без воды. Альтернатива: <a href="https://www.wildberries.ru/catalog/684974476/detail.aspx" target="_blank" rel="noopener">WB, 541 ₽</a></span></td><td>Ozon</td><td class="num">490</td></tr>
+        <tr><td><a href="https://market.yandex.ru/card/setevoy-adapter-z55-220v-24v-2a-48w-shtekker-5521mm/103196884773" target="_blank" rel="noopener">Блок питания 24 В 2 А, штекер 5,5×2,1</a></td><td>Я.Маркет</td><td class="num">289</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/ex04010s2p-ventilyator-12v-40x40x10-mm-podshipnik-exegate-9000944263" target="_blank" rel="noopener">Вентилятор 40×40×10, 12 В</a></td><td>ЧипДип</td><td class="num">160</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/lm2596-blue-adjustable-step-down-dc-dc-module-modul-tzt-9002054618" target="_blank" rel="noopener">Понижающий модуль LM2596</a></td><td>ЧипДип</td><td class="num">170</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/dc-022b-gnezdo-pitaniya-na-panel-2.0x5.5-mm-s-gaykoy-daier-8074771619" target="_blank" rel="noopener">Гнездо питания DC-022B</a></td><td>ЧипДип</td><td class="num">31</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/kcd1-101k2pa1k-kcd1-101-smrs-101-2pin-6a-250v-jinghan-8008001795" target="_blank" rel="noopener">Выключатель KCD1-101</a></td><td>ЧипДип</td><td class="num">8</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/0205003016p300002510-vint-din-7985-polusfera-steelrex-9000688246" target="_blank" rel="noopener">Винты М3×16</a> + <a href="https://www.chipdip.ru/product/0217003000p300005010-gayka-din-934-tsink-m-3-up-50-steelrex-9000688274" target="_blank" rel="noopener">гайки М3</a></td><td>ЧипДип</td><td class="num">100</td></tr>
+        <tr><td><a href="https://www.ozon.ru/product/samokleyashchayasya-uplotnitelnaya-lenta-eva-2x10-mm-5-m-chernaya-dlya-okon-i-dverey-5008940741/" target="_blank" rel="noopener">Уплотнитель EVA 2×10 мм, 5 м</a><br><span class="muted">Режется вдоль на полоски 3 мм, нужно 0,8 м</span></td><td>Ozon</td><td class="num">139</td></tr>
+        <tr><td><a href="https://market.yandex.ru/card/plastik-petg-dlya-3d-pechati-seryy-175-mm-1-kg--1/103539001723" target="_blank" rel="noopener">PETG серый 1 кг</a> — основание, плита, градирня, газоход</td><td>Я.Маркет</td><td class="num">680</td></tr>
+        <tr><td><a href="https://market.yandex.ru/card/krasnyy-petg-plastik-05kg-dlya-3d-printera-bestfilament-175-mm/102349780564" target="_blank" rel="noopener">PETG красный 0,5 кг</a></td><td>Я.Маркет</td><td class="num">471</td></tr>
+        <tr><td><a href="https://www.chipdip.ru/product/filament-crown-cm-filpetg015w-petg-1.75-1kg-crown-micro-8067230303" target="_blank" rel="noopener">PETG белый 1 кг</a> — главный корпус, белые полосы</td><td>ЧипДип</td><td class="num">800</td></tr>
+      </tbody>
+      <tfoot><tr><td>Итого</td><td></td><td class="num">3 340</td></tr></tfoot>
+    </table></div>
+    <ul class="plain muted">
+      <li>Оголовок трубы весит 1 г: подойдёт любой чёрный остаток или чёрный маркер по красному.</li>
+      <li>Отдельный блок питания на 2 А нужен, чтобы от одного питания работали и туман, и вентилятор. Адаптер из комплекта туманообразователя останется запасным.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="label">Что напечатать · 13 деталей, ≈870 г</div>
+    <h2>Печать</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Деталь</th><th>Пластик</th><th>Размер, мм</th><th>Масса</th></tr></thead>
+      <tbody>
+        <tr><td>Base — основание-бак</td><td><i class="sw" style="background:#9a978f"></i>серый</td><td class="num">212×196×90</td><td class="num">417 г</td></tr>
+        <tr><td>Lid — плита-крышка</td><td><i class="sw" style="background:#9a978f"></i>серый</td><td class="num">212×196×10</td><td class="num">148 г</td></tr>
+        <tr><td>CoolingTower — градирня</td><td><i class="sw" style="background:#9a978f"></i>серый</td><td class="num">Ø122×186</td><td class="num">104 г</td></tr>
+        <tr><td>MainBuilding — главный корпус</td><td><i class="sw" style="background:#f4f3ee"></i>белый</td><td class="num">162×45×79</td><td class="num">109 г</td></tr>
+        <tr><td>FlueDuct — газоход с эстакадой</td><td><i class="sw" style="background:#9a978f"></i>серый</td><td class="num">12×75×40</td><td class="num">12 г</td></tr>
+        <tr><td>Band1, 3, 5, 7 — полосы трубы</td><td><i class="sw" style="background:#b0301f"></i>красный</td><td class="num">Ø46…24 × 57</td><td class="num">40 г</td></tr>
+        <tr><td>Band2, 4, 6 — полосы трубы</td><td><i class="sw" style="background:#f4f3ee"></i>белый</td><td class="num">Ø44…28 × 57</td><td class="num">33 г</td></tr>
+        <tr><td>Cap — оголовок</td><td><i class="sw" style="background:#222"></i>чёрный</td><td class="num">Ø24 × 11</td><td class="num">1 г</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="plain">
+      <li>PETG: сопло 235–245 °C, стол 75–80 °C, слой 0,2 мм. PLA не подходит: со временем размокает.</li>
+      <li>Градирню печатай в режиме «вазы» (spiral vase) или с одним-двумя периметрами: стенка 1,6 мм.</li>
+      <li>Полосы трубы — стоя, хвостовиком вниз, с каймой. Оголовок — вверх ногами. Поддержки не нужны.</li>
+      <li>Основание: поток 103–105 %, дно 15 сплошных слоёв. Налей воды на сутки. Если подтекает — эпоксидка изнутри.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="label">Сборка</div>
+    <h2>Собрать за вечер</h2>
+    <ol class="steps">
+      <li><span>Проверь основание на протечку: вода на сутки, на бумаге.</span></li>
+      <li><span>Внутри основания отметь уровень MAX — 60 мм от дна.</span></li>
+      <li><span>Прикрути вентилятор к крыше котельной изнутри, наклейкой вниз — так он дует в бак.</span></li>
+      <li><span>В торец машинного зала поставь выключатель и гнездо 24 В, внутрь положи LM2596. Выставь на ней 12 В до подключения вентилятора.</span></li>
+      <li><span>Спаяй по схеме из раздела «Где провода». Провод вентилятора проведи через стену в котельную.</span></li>
+      <li><span>Приклей корпус к плите. Шов котельной промажь клеем по кругу, чтобы воздух не уходил мимо бака.</span></li>
+      <li><span>Положи туманообразователь на дно под градирней. Кабель выведи через отверстие в плите под машинным залом, залей оба отверстия силиконом.</span></li>
+      <li><span>Нарежь уплотнитель на полоски 3 мм и наклей на верхний торец основания. Плита должна ложиться с лёгким пружинением.</span></li>
+      <li><span>Вставь градирню и трубу (полосы 1→7 и оголовок) в отверстия плиты. Газоход поставь на эстакаде между котельной и трубой.</span></li>
+    </ol>
+    <p>Заправка: налей дистиллированную воду прямо в горло градирни — она стечёт в бак. Снимать ничего не нужно.</p>
+  </section>
+
+  <section>
+    <div class="label">Пользование</div>
+    <h2>Чтобы работал долго</h2>
+    <ul class="plain">
+      <li>Только дистиллированная вода. Из водопроводной на мебели оседает белый налёт.</li>
+      <li>Раз в 2–3 дня сливай остаток и давай баку просохнуть. В стоячей воде заводятся бактерии.</li>
+      <li>Без эфирных масел: они портят пластик и мембрану.</li>
+      <li>Когда воды меньше 20 мм, туманообразователь выключается сам. Вентилятор при этом крутится — выключи и долей.</li>
+    </ul>
+    <div class="warn">220 В есть только внутри покупного блока питания. К воде идёт только 24 В. Самодельную сетевую проводку рядом с водой не делать.</div>
+  </section>
+
+  <section>
+    <div class="label">Что мы сделали</div>
+    <h2>От фото до файлов</h2>
+    <ol class="steps">
+      <li><span>Подключили бесплатный FreeCAD к Claude через открытый MCP-сервер и построили в нём модель по нормам и прототипам.</span></li>
+      <li><span>Проверили, что детали не пересекаются и каждая влезает в принтер 220×220 мм. Посчитали поток воздуха и тумана.</span></li>
+      <li><span>Перенесли модель в Blender через второй MCP-сервер: материалы, студийный свет, объёмный пар. Фото сверху — рендер Cycles.</span></li>
+      <li><span>Подобрали детали на Ozon, WB, Яндекс Маркете и в ЧипДипе.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="label">Файлы · папка ~/Desktop/humidifier-tec</div>
+    <h2>Что чем открыть</h2>
+    <div class="files">
+      <div><span>humidifier_tec_section.dxf</span><span>AutoCAD: разрез и вид сверху с размерами, мм</span></div>
+      <div><span>humidifier_tec_3d.step</span><span>3D-сборка для любой CAD</span></div>
+      <div><span>humidifier_tec.FCStd</span><span>FreeCAD: исходник, размеры менять тут</span></div>
+      <div><span>stl/*.stl</span><span>13 деталей для слайсера</span></div>
+      <div><span>renders/*.jpg, tec1_scene.blend</span><span>фото и сцена Blender</span></div>
+      <div><span>humidifier_tec_v1.FCStd</span><span>прошлая версия: одна труба, 1:300</span></div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+// ---- gallery: rendered photos first, live 3D on demand
+const PHOTOS = [["01", "Общий вид"], ["02", "Снизу"], ["03", "Пар"], ["04", "Разрез"]];
+const src = id => "img/" + id + ".jpg";
+const photo = document.getElementById("photo"), viewerEl = document.getElementById("viewer"), toolbar = document.getElementById("toolbar"), badge = document.getElementById("badge");
+document.getElementById("inside").src = src("04");
+const thumbs = document.getElementById("thumbs"), tbtn = [];
+function show(i) {
+  tbtn.forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+  const is3d = i === PHOTOS.length;
+  photo.hidden = is3d; viewerEl.hidden = !is3d; toolbar.hidden = !is3d;
+  badge.textContent = is3d ? "3D · тяни, чтобы покрутить" : "Фото · рендер Cycles";
+  if (is3d) start3d(); else { photo.src = src(PHOTOS[i][0]); photo.alt = "ТЭЦ-1, " + PHOTOS[i][1].toLowerCase(); }
+}
+PHOTOS.forEach(([id, name], i) => {
+  const b = document.createElement("button"); b.className = "thumb"; b.setAttribute("aria-label", name);
+  const im = new Image(); im.src = src(id); im.alt = ""; const c = document.createElement("span"); c.textContent = name;
+  b.append(im, c); b.onclick = () => show(i); thumbs.append(b); tbtn.push(b);
+});
+{ const b = document.createElement("button"); b.className = "thumb"; b.setAttribute("aria-label", "3D-модель");
+  const i3 = document.createElement("i"); i3.textContent = "3D"; const c = document.createElement("span"); c.textContent = "Покрутить";
+  b.append(i3, c); b.onclick = () => show(PHOTOS.length); thumbs.append(b); tbtn.push(b); }
+show(0);
+
+let started = false;
+async function start3d() {
+  if (started) return; started = true;
+  const THREE = await import("three");
+  const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
+  const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+  const { RoomEnvironment } = await import("three/addons/environments/RoomEnvironment.js");
+  const { HorizontalBlurShader } = await import("three/addons/shaders/HorizontalBlurShader.js");
+  const { VerticalBlurShader } = await import("three/addons/shaders/VerticalBlurShader.js");
+
+  // CAD numbers (mm, Z up) from FreeCAD; scene is Y up, table at y = 0
+  const H = 360, RB = 20.5, RT = 9.2, R = z => RB - (RB - RT) / H * z, CX = 60, CY = 48, TX = -38, TY = 22, GROUND = 96;
+  const P = (x, y, z) => new THREE.Vector3(x, z + GROUND, -y);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const el = viewerEl;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+  renderer.localClippingEnabled = true; el.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  const camera = new THREE.PerspectiveCamera(26, 1, 5, 9000);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.minDistance = 120; controls.maxDistance = 3000; controls.maxPolarAngle = Math.PI * 0.52; controls.autoRotateSpeed = 0.6;
+  const key = new THREE.DirectionalLight(0xfff4ea, 1.5); key.position.set(-500, 900, 700); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xdfe8ff, 1.2); rim.position.set(300, 500, -800); scene.add(rim);
+
+  const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0), clipped = [];
+  const pm = (color, o = {}) => { const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.5, clearcoat: 0.15, side: THREE.DoubleSide, ...o }); clipped.push(m); return m; };
+  const MAT = {
+    Base: pm(0xcfcec9, { roughness: 0.55 }), Lid: pm(0x2c2f33, { roughness: 0.85, clearcoat: 0 }),
+    CoolingTower: pm(0xa4a29b, { roughness: 0.92, clearcoat: 0 }), MainBuilding: pm(0xd6d5cf, { roughness: 0.65 }),
+    FlueDuct: pm(0x5b5f64, { roughness: 0.5, metalness: 0.6 }), red: pm(0xb0281c), white: pm(0xeeece6),
+    Cap: pm(0x18191b, { roughness: 0.6, metalness: 0.3 }),
+    ObstructionLights: new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 1.2 }),
+    Fan40: pm(0x151617), Switch: pm(0x111213, { roughness: 0.3 }), PowerSupply: pm(0x161719, { roughness: 0.55 }),
+    MistMaker: pm(0xb5babf, { metalness: 0.9, roughness: 0.25, clearcoat: 0 }), DCJack: pm(0x9a9a9a, { metalness: 0.9, roughness: 0.3 }),
+    LM2596: pm(0x0c3f8f, { roughness: 0.35 }), WiresRed: pm(0xb3140f, { roughness: 0.4 }), WiresBlack: pm(0x131313, { roughness: 0.4 }),
+    Glass: pm(0x111a24, { roughness: 0.08, metalness: 0.3 }),
+    Water: new THREE.MeshPhysicalMaterial({ color: 0x7fc0ff, transmission: 0.9, roughness: 0.05, thickness: 30, ior: 1.33, transparent: true, opacity: 0.7, side: THREE.DoubleSide }),
+  };
+  clipped.push(MAT.Water);
+  MAT.MistCable = MAT.PSUCable = MAT.WiresBlack;
+  const keyOf = n => /^Glass/.test(n) ? "Glass" : n;
+  const matFor = n => /^Band\d$/.test(n) ? (+n.slice(4) % 2 ? MAT.red : MAT.white) : MAT[keyOf(n)];
+  const EXPLODE = { Lid: 30, MainBuilding: 70, Glass: 70, Fan40: 70, FlueDuct: 95, CoolingTower: 120, Cap: 120 + 8 * 26 };
+  for (let i = 1; i <= 7; i++) EXPLODE["Band" + i] = 120 + i * 26;
+  const HIDE_EXPLODED = ["ObstructionLights", "WiresRed", "WiresBlack"];
+
+  // contact shadow from below
+  const SW = 1100, SC_H = 160, rt = new THREE.WebGLRenderTarget(512, 512), rtBlur = new THREE.WebGLRenderTarget(512, 512);
+  const planeGeo = new THREE.PlaneGeometry(SW, SW).rotateX(Math.PI / 2);
+  const shadowPlane = new THREE.Mesh(planeGeo, new THREE.MeshBasicMaterial({ map: rt.texture, opacity: 0.85, transparent: true, depthWrite: false }));
+  shadowPlane.renderOrder = 1; shadowPlane.scale.y = -1; shadowPlane.position.set(-30, 0.2, 0); scene.add(shadowPlane);
+  const blurPlane = new THREE.Mesh(planeGeo); blurPlane.visible = false; blurPlane.position.copy(shadowPlane.position); scene.add(blurPlane);
+  const shadowCam = new THREE.OrthographicCamera(-SW / 2, SW / 2, SW / 2, -SW / 2, 0, SC_H); shadowCam.rotation.x = Math.PI / 2; shadowCam.position.copy(shadowPlane.position); scene.add(shadowCam);
+  const depthMat = new THREE.MeshDepthMaterial(); depthMat.userData.darkness = { value: 1.5 };
+  depthMat.onBeforeCompile = s => { s.uniforms.darkness = depthMat.userData.darkness;
+    s.fragmentShader = "uniform float darkness;\n" + s.fragmentShader.replace("gl_FragColor = vec4( vec3( 1.0 - fragCoordZ ), opacity );", "gl_FragColor = vec4( vec3( 0.0 ), ( 1.0 - fragCoordZ ) * darkness );"); };
+  depthMat.depthTest = depthMat.depthWrite = false;
+  const hBlur = new THREE.ShaderMaterial(HorizontalBlurShader), vBlur = new THREE.ShaderMaterial(VerticalBlurShader); hBlur.depthTest = vBlur.depthTest = false;
+  function blur(a) {
+    blurPlane.visible = true;
+    blurPlane.material = hBlur; hBlur.uniforms.tDiffuse.value = rt.texture; hBlur.uniforms.h.value = a / 256; renderer.setRenderTarget(rtBlur); renderer.render(blurPlane, shadowCam);
+    blurPlane.material = vBlur; vBlur.uniforms.tDiffuse.value = rtBlur.texture; vBlur.uniforms.v.value = a / 256; renderer.setRenderTarget(rt); renderer.render(blurPlane, shadowCam);
+    blurPlane.visible = false;
+  }
+  function renderShadow() {
+    const v = [shadowPlane.visible, mist.visible]; shadowPlane.visible = mist.visible = false;
+    scene.overrideMaterial = depthMat; renderer.setClearAlpha(0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, shadowCam);
+    scene.overrideMaterial = null; blur(4); blur(1.5); renderer.setRenderTarget(null); [shadowPlane.visible, mist.visible] = v;
+  }
+
+  // steam: wide plume from the cooling tower, thin wisp from the chimney
+  const N = 1000, seeds = Array.from({ length: N }, (_, i) => ({ t: Math.random(), a: Math.random() * 6.283, r: Math.sqrt(Math.random()), dx: Math.random() - .5, dz: Math.random() - .5, sp: .8 + Math.random() * .5, chim: i % 25 === 0 }));
+  const pos = new Float32Array(N * 3), life = new Float32Array(N), mg = new THREE.BufferGeometry();
+  mg.setAttribute("position", new THREE.BufferAttribute(pos, 3)); mg.setAttribute("aLife", new THREE.BufferAttribute(life, 1));
+  const mistMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false,
+    uniforms: { uScale: { value: 300 } },
+    vertexShader: `attribute float aLife; uniform float uScale; varying float vA;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vA = (1.0 - aLife) * smoothstep(0.0, 0.12, aLife);
+        gl_PointSize = (34.0 + 120.0 * aLife) * uScale / -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying float vA; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d) * vA * 0.16; if (a < 0.003) discard; gl_FragColor = vec4(vec3(0.93,0.95,0.97), a); }` });
+  const mist = new THREE.Points(mg, mistMat); mist.frustumCulled = false; scene.add(mist);
+  function stepMist(dt) {
+    for (let i = 0; i < N; i++) {
+      const s = seeds[i]; s.t += dt * 0.14 * s.sp; if (s.t > 1) { s.t -= 1; s.a = Math.random() * 6.283; }
+      const u = s.t, [bx, by, bz, r0, rise, spread] = s.chim ? [CX, CY, H, 6, 120, 20] : [TX, TY, 182, 34, 170, 55];
+      const rr = s.r * (r0 + spread * u), x = bx + Math.cos(s.a) * rr + s.dx * 40 * u + 18 * u * u, y = by + Math.sin(s.a) * rr + s.dz * 40 * u;
+      const v = P(x, y, bz + rise * Math.pow(u, 0.8)); pos.set([v.x, v.y, v.z], i * 3); life[i] = u;
+    }
+    mg.attributes.position.needsUpdate = mg.attributes.aLife.needsUpdate = true;
+  }
+  for (let i = 0; i < 40; i++) stepMist(0.25);
+
+  const parts = {}, loading = document.getElementById("loading");
+  new GLTFLoader().load("model.glb", gltf => {
+    const model = gltf.scene; let box = new THREE.Box3().setFromObject(model);
+    model.scale.multiplyScalar((H + GROUND) / box.getSize(new THREE.Vector3()).y); model.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(model); model.position.y -= box.min.y; model.updateMatrixWorld(true); scene.add(model);
+    model.traverse(o => {
+      if (!o.isMesh) return;
+      let n = o, name = null; while (n && !name) { if (matFor(n.name)) name = n.name; n = n.parent; }
+      if (!name) return;
+      o.material = matFor(name);
+      let top = o; while (top.parent && top.parent !== model) top = top.parent;
+      (parts[keyOf(name)] ||= new Set()).add(top);
+    });
+    for (const k in parts) parts[k] = [...parts[k]].map(o => { const a = o.parent.worldToLocal(new THREE.Vector3()), b = o.parent.worldToLocal(new THREE.Vector3(0, 1, 0)); return { o, p0: o.position.clone(), up: b.sub(a) }; });
+    loading.hidden = true; intro();
+  }, e => { if (e.total) loading.textContent = "Загружаю 3D… " + Math.round(e.loaded / e.total * 100) + "%"; }, () => { loading.textContent = "3D не загрузилось. Обнови страницу."; });
+
+  const HS = [
+    { p: [TX, TY, 184], t: "Градирня", d: "Горло Ø74 мм — отсюда выходит пар. Сюда же заливают воду: она стекает прямо в бак." },
+    { p: [CX + R(270) + 2.6, CY, 272], t: "Дымовая труба", d: "7 полос по 1/7 высоты, площадки и огни через 45 м — по ФАП-119. Из устья идёт тонкая струйка пара." },
+    { p: [31, -69.5, 80], t: "Вентилятор", d: "40 мм под решёткой на крыше котельной. Дует вниз в бак и выдавливает туман наружу." },
+    { p: [-87, -62, 24], t: "Пульт", d: "Выключатель и гнездо 24 В в торце машинного зала. Внутри — плата LM2596, регулятор скорости вентилятора." },
+    { p: [60, -10, 41], t: "Газоход", d: "Короб на эстакаде от котельной к трубе — как на настоящей ТЭЦ." },
+    { p: [0, -98, -50], t: "Бак 2,3 л", d: "Основание — это бак. Туманообразователь лежит на дне под градирней." },
+    { p: [-155, -85, -66], t: "Блок питания", d: "24 В, 2 А. Сетевое напряжение есть только внутри него." },
+  ];
+  const hsBox = document.getElementById("hotspots"), card = document.getElementById("card");
+  HS.forEach((h, i) => { const b = document.createElement("button"); b.className = "hs"; b.textContent = i + 1; b.setAttribute("aria-label", h.t);
+    b.onclick = () => { document.getElementById("card-t").textContent = (i + 1) + ". " + h.t; document.getElementById("card-d").textContent = h.d; card.hidden = false; };
+    hsBox.append(b); h.el = b; h.v = P(...h.p); });
+  document.getElementById("card-x").onclick = () => { card.hidden = true; };
+
+  const HOME = [P(980, -1280, 720), P(-20, 0, 175)], EXPL = [P(1250, -1600, 1000), P(-20, 0, 280)];
+  let tween = null, ex = 0, idle = null;
+  const state = { explode: false, cut: false, mist: true, hints: false };
+  function fly([c, t], dur = 1.3) { tween = { t: 0, dur: reduce ? .01 : dur, c0: camera.position.clone(), t0: controls.target.clone(), c1: c, t1: t }; pauseSpin(); }
+  function pauseSpin() { controls.autoRotate = false; clearTimeout(idle); if (!reduce) idle = setTimeout(() => { if (!tween) controls.autoRotate = true; }, 7000); }
+  function intro() { camera.position.copy(P(1700, -2200, 200)); controls.target.copy(HOME[1]); fly(HOME, 2.2); }
+  controls.addEventListener("start", pauseSpin);
+  const btn = id => document.getElementById(id);
+  function sync() {
+    for (const k of ["explode", "cut", "mist", "hints"]) btn("b-" + k).setAttribute("aria-pressed", state[k]);
+    clipped.forEach(m => { m.clippingPlanes = state.cut ? [cut] : []; m.needsUpdate = true; });
+    hsBox.hidden = !state.hints; if (!state.hints) card.hidden = true;
+  }
+  for (const k of ["explode", "cut", "mist", "hints"]) btn("b-" + k).onclick = () => {
+    state[k] = !state[k];
+    if (k === "explode") { if (state.explode) state.cut = false; fly(state.explode ? EXPL : HOME); }
+    if (k === "cut" && state.cut) state.explode = false;
+    sync();
+  };
+  btn("b-full").onclick = () => { (document.fullscreenElement ? document.exitFullscreen() : document.getElementById("stage").requestFullscreen?.())?.catch?.(() => {}); };
+  sync(); camera.position.copy(HOME[0]); controls.target.copy(HOME[1]);
+  const resize = () => { const w = el.clientWidth, h = el.clientHeight; if (!w) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); mistMat.uniforms.uScale.value = h * 0.55 * renderer.getPixelRatio(); };
+  new ResizeObserver(resize).observe(el); resize();
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const clock = new THREE.Clock(), axis = P(TX, TY, 0), tmp = new THREE.Vector3();
+  renderer.setAnimationLoop(() => {
+    if (el.hidden) return;
+    const dt = Math.min(clock.getDelta(), .05);
+    if (tween) { tween.t += dt / tween.dur; const e = ease(Math.min(tween.t, 1)); camera.position.lerpVectors(tween.c0, tween.c1, e); controls.target.lerpVectors(tween.t0, tween.t1, e); if (tween.t >= 1) tween = null; }
+    const exT = state.explode ? 1 : 0;
+    if (Math.abs(ex - exT) > 1e-4) {
+      ex += (exT - ex) * Math.min(1, dt * 5);
+      for (const n in parts) for (const p of parts[n]) { p.o.position.copy(p.p0).addScaledVector(p.up, (EXPLODE[n] || 0) * ex); if (HIDE_EXPLODED.includes(n)) p.o.visible = ex < .02; }
+    }
+    mist.visible = state.mist && ex < .05; if (mist.visible && !reduce) stepMist(dt);
+    tmp.subVectors(camera.position, controls.target).setY(0).normalize().negate(); cut.setFromNormalAndCoplanarPoint(tmp, axis);
+    controls.update(); renderShadow(); renderer.render(scene, camera);
+    if (state.hints) { const w = el.clientWidth, h = el.clientHeight;
+      for (const s of HS) { tmp.copy(s.v).project(camera); const vis = ex < .05 && tmp.z < 1 && Math.abs(tmp.x) < 1.05 && Math.abs(tmp.y) < 1.05;
+        s.el.style.opacity = vis ? 1 : 0; s.el.style.pointerEvents = vis ? "auto" : "none"; s.el.style.left = (tmp.x * .5 + .5) * w + "px"; s.el.style.top = (-tmp.y * .5 + .5) * h + "px"; } }
+  });
+}
+</script>
+
+</body>
+</html>
