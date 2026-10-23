@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Двуспальная кровать 160×200 из бруса 45×45 и доски 20 мм: модель, карта распила, список покупок, сборка за вечер.">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+<title>Кровать 160×200</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: карточка товара (галерея + покупка), ниже — паспорт изделия одной колонкой */
+:root {
+  --bg: #eceeed; --panel: #f7f8f7; --fg: #1b1e21; --muted: #5c646b; --line: #c9cfcf; --red: #a4561a;
+  --photo: #1a1e24;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "PT Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15181b; --panel: #1d2125; --fg: #e7e9ea; --muted: #9aa3aa; --line: #343a40; --red: #e08a4a; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #15181b; --panel: #1d2125; --fg: #e7e9ea; --muted: #9aa3aa; --line: #343a40; --red: #e08a4a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 17px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 56px; }
+.doc { max-width: 900px; width: 100%; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h2 { font-size: clamp(19px, 2.4vw, 24px); font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--red); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.label { font: 600 12px/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); font-size: 15px; }
+.mono { font-family: var(--mono); font-size: 0.9em; }
+.bar { height: 10px; background: var(--red); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); }
+section { display: grid; gap: 16px; }
+
+/* product card */
+.product { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: start; padding-top: 32px; }
+.gallery { display: grid; gap: 12px; min-width: 0; }
+.stage { position: relative; aspect-ratio: 3 / 4; width: min(100%, calc(84vh * 3 / 4)); justify-self: center; max-width: 100%; border-radius: 12px; overflow: hidden; background: var(--photo); }
+.stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.viewer { position: absolute; inset: 0; background: radial-gradient(110% 80% at 50% 40%, #2a313b 0%, #12151a 100%); }
+.viewer [hidden], .stage [hidden] { display: none !important; }
+.badge { position: absolute; top: 14px; left: 14px; font: 600 12px var(--body); color: #e7e9ea; background: rgba(15,18,22,.62); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 5px 11px; pointer-events: none; backdrop-filter: blur(6px); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 14px var(--mono); color: #9aa3aa; pointer-events: none; }
+.thumbs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.thumb { flex: 0 0 auto; width: 76px; display: grid; gap: 5px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--muted); font: 12px var(--body); text-align: center; }
+.thumb img, .thumb i { width: 76px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--line); display: grid; place-items: center; background: var(--photo); color: #e7e9ea; font: 700 15px var(--display); font-style: normal; }
+.thumb[aria-pressed="true"] img, .thumb[aria-pressed="true"] i { border-color: var(--fg); }
+.thumb[aria-pressed="true"] { color: var(--fg); }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: center; justify-self: center; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; max-width: 100%; }
+.toolbar button { font: 600 13px var(--body); padding: 8px 14px; border-radius: 999px; border: 0; background: transparent; color: var(--fg); cursor: pointer; white-space: nowrap; }
+.toolbar button:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.toolbar button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+.buybox { display: grid; gap: 20px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); min-width: 0; }
+.buybox h1 { font-size: clamp(34px, 4.4vw, 52px); }
+.sub { color: var(--muted); }
+.price { display: grid; gap: 2px; padding-block: 14px; border-block: 1px solid var(--line); }
+.price b { font: 700 32px/1.1 var(--display); }
+.price span { font-size: 14px; color: var(--muted); }
+.feats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.feats li { display: grid; gap: 2px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.feats b { font-size: 15px; }
+.feats span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.keyspecs { margin: 0; display: grid; }
+.keyspecs div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--line); font-size: 15px; }
+.keyspecs dt { color: var(--muted); }
+.keyspecs dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* passport */
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; max-width: 72ch; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; }
+ol.steps li::before { content: counter(s); font: 600 13px/26px var(--mono); text-align: center; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 50%; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 72ch; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+tr.grp td { font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: color-mix(in srgb, var(--fg) 5%, transparent); }
+tfoot td { font-weight: 700; }
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.why div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.why span { font-size: 15px; color: var(--muted); }
+.figure { display: grid; gap: 8px; margin: 0; }
+.figure img { width: 100%; border-radius: 10px; display: block; background: var(--photo); }
+.warn { border-left: 4px solid var(--red); padding: 12px 16px; background: var(--panel); border-radius: 0 6px 6px 0; max-width: 72ch; }
+.files { display: grid; gap: 6px; font: 14px var(--mono); }
+.files div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 9px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
+.files div span:first-child { overflow-wrap: anywhere; }
+.files div span:last-child { color: var(--muted); font-family: var(--body); }
+@media (max-width: 900px) { .product { grid-template-columns: minmax(0, 1fr); } .buybox { position: static; } }
+@media (max-width: 640px) { .why, .feats { grid-template-columns: minmax(0, 1fr); } .files div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+</style>
+</head>
+<body>
+
+<div class="bar" aria-hidden="true"></div>
+<main class="wrap">
+  <section class="product">
+    <div class="gallery">
+      <div class="stage" id="stage">
+        <img id="photo" alt="Кровать 160×200, общий вид">
+        <div class="viewer" id="viewer" hidden>
+          <div class="loading" id="loading">Загружаю 3D…</div>
+        </div>
+        <span class="badge" id="badge">Рендер Blender</span>
+      </div>
+      <div class="toolbar" id="toolbar" hidden>
+        <button id="b-boards" aria-pressed="true">Боковины</button>
+        <button id="b-slats" aria-pressed="true">Рейки</button>
+        <button id="b-metal" aria-pressed="true">Уголки</button>
+        <button id="b-full">Во весь экран</button>
+      </div>
+      <div class="thumbs" id="thumbs" aria-label="Рендеры и 3D"></div>
+    </div>
+
+    <aside class="buybox">
+      <div class="label">DIY · двуспальная кровать</div>
+      <h1>Кровать 160×200</h1>
+      <p class="sub">Рама из бруса 45×45, реечное основание из доски 20 мм, боковины снаружи. Уголки и шурупы, без шипов и клея. Пила, дрель, шуруповёрт.</p>
+      <div class="price"><b>≈ 10 700 ₽</b><span>всё из Петровича и Максидома; ≈16 500 ₽ с клеёным брусом и маслом. Без доставки и распила</span></div>
+      <ul class="feats">
+        <li><b>Центральный брус</b><span>Без него доска 20 мм по пролёту 1600 мм прогнётся</span></li>
+        <li><b>30 реек</b><span>Две половины, зазор между рейками ≈36 мм</span></li>
+        <li><b>7 ножек</b><span>По 200 мм. Без них кровать ляжет на пол</span></li>
+        <li><b>Боковины</b><span>Доска 20×145 удерживает матрас</span></li>
+      </ul>
+      <dl class="keyspecs">
+        <div><dt>Матрас</dt><dd>1600 × 2000 мм</dd></div>
+        <div><dt>Габарит</dt><dd>1730 × 2130 × 345 мм</dd></div>
+        <div><dt>Верх реек</dt><dd>265 мм от пола</dd></div>
+        <div><dt>Материал</dt><dd>брус 45×45, доска 20 мм</dd></div>
+        <div><dt>Деталей</dt><dd>70, пересечений нет</dd></div>
+      </dl>
+    </aside>
+  </section>
+
+  <div class="doc">
+  <section>
+    <div class="label">Как устроена</div>
+    <h2>Рама, реечное основание, боковины</h2>
+    <ol class="steps">
+      <li><span>Рама: два боковых бруса (2000) и два торцевых (1690) в прямоугольник. Внутри остаётся ровно 1600×2000 под матрас.</span></li>
+      <li><span>Изнутри к боковым прикручены опорные брусья (2000). На них лежат рейки.</span></li>
+      <li><span>По оси между торцевыми идёт центральный брус (2000). На него опираются обе половины настила.</span></li>
+      <li><span>Рейки 95×20×797: 15 на каждую половину, между половинами зазор 6 мм по оси.</span></li>
+      <li><span>Снаружи боковины 20×145: длинные по бокам, короткие (1730) перекрывают торцы длинных.</span></li>
+      <li><span>7 ножек по 200 мм: 4 угловые, 2 по бокам посередине, 1 под центральным брусом.</span></li>
+    </ol>
+    <figure class="figure"><img id="plan" alt="Кровать, вид сверху"></figure>
+    <div class="why">
+      <div><b>Центральный брус обязателен</b><span>Доска 20 мм без опоры на пролёте 1600 мм прогнётся под двоими. С брусом пролёт рейки 797 мм.</span></div>
+      <div><b>Две половины настила</b><span>Рейки 797 мм не надо подгонять по ширине: каждая ложится от боковины до центра.</span></div>
+      <div><b>Зазор 36 мм</b><span>15 реек на половину. Эскиз давал 7 реек (зазор 167 мм) — для матраса много, он будет проваливаться.</span></div>
+      <div><b>Болты сквозь брус</b><span>Боковой брус к опорному стянут потайными болтами M8, по 5 на сторону. Остальное на шурупах и уголках.</span></div>
+    </div>
+    <p class="muted">Отверстия под болты и шурупы в модели не показаны.</p>
+  </section>
+
+  <section>
+    <div class="label">Карта распила · длины чистые, без пропила</div>
+    <h2>Что из чего резать</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Деталь</th><th>Сечение</th><th>Длина</th><th>Шт.</th></tr></thead>
+      <tbody>
+        <tr><td>Боковой брус</td><td class="num">45×45</td><td class="num">2000</td><td class="num">2</td></tr>
+        <tr><td>Опорный брус реек</td><td class="num">45×45</td><td class="num">2000</td><td class="num">2</td></tr>
+        <tr><td>Центральный брус</td><td class="num">45×45</td><td class="num">2000</td><td class="num">1</td></tr>
+        <tr><td>Торцевой брус (1600 + 2×45)</td><td class="num">45×45</td><td class="num">1690</td><td class="num">2</td></tr>
+        <tr><td>Ножка</td><td class="num">45×45</td><td class="num">200</td><td class="num">7</td></tr>
+        <tr><td>Рейка</td><td class="num">95×20</td><td class="num">797</td><td class="num">30</td></tr>
+        <tr><td>Боковина</td><td class="num">145×20</td><td class="num">2000</td><td class="num">2</td></tr>
+        <tr><td>Торцевая боковина</td><td class="num">145×20</td><td class="num">1730</td><td class="num">2</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Купить</th><th>Как резать</th></tr></thead>
+      <tbody>
+        <tr><td>Брус 45×45×3000, 7 шт.</td><td>5 штук режутся на 2000 (остаток 1000), 2 на 1690 (остаток 1310). Все 7 ножек по 200 — из остатков: 6 из одного 1310, 1 из 1000.</td></tr>
+        <tr><td>Доска 20×95×2000, 15 шт.</td><td>Из каждой 2 рейки по 797 (1594 + пропил), остаток ≈400 мм.</td></tr>
+        <tr><td>Доска 20×145×2000, 4 шт.</td><td>2 целиком, 2 обрезать до 1730. Остатки по 270 мм — в запас.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="label">Что купить · цены на 23.10.2026, Петрович и Максидом, СПб</div>
+    <h2>Покупки ≈ 10 700 ₽</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Позиция</th><th>Шт.</th><th>Цена, ₽</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="3">Дерево</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/999574/" target="_blank" rel="noopener">Брусок 45×45×3000, сухой строганый АВ</a> · Петрович, 309 ₽<br><span class="muted">Лучше: <a href="https://petrovich.ru/product/1144563/" target="_blank" rel="noopener">сращенный Экстра, 951 ₽</a> — прямой, не ведёт. Аналог: <a href="https://www.maxidom.ru/catalog/brus/1001150605/" target="_blank" rel="noopener">Максидом, 330 ₽</a></span></td><td class="num">7</td><td class="num">2 163</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/999582/" target="_blank" rel="noopener">Доска 20×95×2000, сухая строганая АВ</a> · Петрович, 227 ₽<br><span class="muted">Аналог: <a href="https://www.maxidom.ru/catalog/doski-stroganye/1000992172/" target="_blank" rel="noopener">Максидом, 213 ₽</a> (−210 ₽ на 15 шт.)</span></td><td class="num">15</td><td class="num">3 405</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/999586/" target="_blank" rel="noopener">Доска 20×145×2000 АВ</a> · Петрович, 361 ₽</td><td class="num">4</td><td class="num">1 444</td></tr>
+        <tr class="grp"><td colspan="3">Металл и крепёж</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/108826/" target="_blank" rel="noopener">Уголок усиленный 90×90×40×2</a> · Петрович, 55 ₽<br><span class="muted">Уголок A: в модели сталь 3 мм, плечо 50. Это ближайший найденный. 12 + 2 запас</span></td><td class="num">14</td><td class="num">770</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/148718/" target="_blank" rel="noopener">Уголок усиленный 90×90×65×2,5</a> · Петрович, 107 ₽<br><span class="muted">Уголок B, на ножки. Аналог: <a href="https://www.maxidom.ru/catalog/ugolki-krepezhnye/1001607569/" target="_blank" rel="noopener">Максидом, 107 ₽</a></span></td><td class="num">8</td><td class="num">856</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/105889/" target="_blank" rel="noopener">Пластина крепёжная 180×65×2</a> · Петрович, 77 ₽<br><span class="muted">В модели 100×40×3. Эта больше, можно обрезать</span></td><td class="num">2</td><td class="num">154</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/640768/" target="_blank" rel="noopener">Болт мебельный DIN603 8×90 с гайкой</a> · 77 ₽ за 2 шт.<br><span class="muted">Цена-заглушка. Нужны M8×100 с потайной головкой + гайка + 2 шайбы, 10 шт. Этот 8×90 короткий: два бруса дают 90 мм, на гайку не остаётся</span></td><td class="num">5 уп.</td><td class="num">385</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/107326/" target="_blank" rel="noopener">Саморезы универсальные 4,5×50, 200 шт.</a> · Петрович<br><span class="muted">Вместо 4×40 (110), 4×35 (60), 5×50 (24). Точные размеры не искал</span></td><td class="num">1</td><td class="num">400</td></tr>
+        <tr><td>Шурупы 6×120 (8 шт.) и 6×100 (14 шт.)<br><span class="muted">Оценка ≈15 ₽/шт., не проверено</span></td><td class="num">22</td><td class="num">≈350</td></tr>
+        <tr class="grp"><td colspan="3">Отделка</td></tr>
+        <tr><td><a href="https://www.maxidom.ru/catalog/kley-pva-kley-dlya-dereva/1001125583/" target="_blank" rel="noopener">Клей ПВА Момент Столяр 0,25 л</a> · Максидом<br><span class="muted">Лучше: <a href="https://petrovich.ru/product/683485/" target="_blank" rel="noopener">Titebond II Premium D3, 595 ₽</a></span></td><td class="num">1</td><td class="num">229</td></tr>
+        <tr><td><a href="https://www.maxidom.ru/catalog/morilki/1001537976/" target="_blank" rel="noopener">Морилка MasterGood 0,5 л</a> · Максидом<br><span class="muted">0,5 л на всю кровать вряд ли хватит, цена-ориентир. Лучше: <a href="https://petrovich.ru/product/1216806/" target="_blank" rel="noopener">масло Neomid Interior 0,75 л, 1 044 ₽</a></span></td><td class="num">1</td><td class="num">106</td></tr>
+        <tr><td><a href="https://www.maxidom.ru/catalog/shkurka-shlifovalnaya/1001549146/" target="_blank" rel="noopener">Шлифлист P120</a> и <a href="https://www.maxidom.ru/catalog/shkurka-shlifovalnaya/1001549149/" target="_blank" rel="noopener">P240</a> · Максидом, 59 ₽</td><td class="num">3 + 2</td><td class="num">295</td></tr>
+        <tr><td><a href="https://petrovich.ru/product/640662/" target="_blank" rel="noopener">Подпятник фетровый 30×30, 6 шт.</a> · Петрович, 71 ₽</td><td class="num">2 уп.</td><td class="num">142</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td>Итого, дёшево</td><td></td><td class="num">≈ 10 700</td></tr>
+        <tr><td>Итого, лучше (клеёный брус, Titebond, масло)</td><td></td><td class="num">≈ 16 500</td></tr>
+      </tfoot>
+    </table></div>
+    <ul class="plain muted">
+      <li>С картой Петровича примерно на 3% дешевле.</li>
+      <li>Не проверено: Леруа Мерлен (сайт не открылся), Ozon, WB, Яндекс Маркет (нет доступа). ОБИ в России нет.</li>
+      <li>Болты сверены с размером по глазу, точный нужный не найден: перед покупкой проверь длину на месте. Уголков именно «для кровати» не нашёл, взяты усиленные для дерева. Крепёж ±500 ₽.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="label">Сборка</div>
+    <h2>Собрать за вечер</h2>
+    <ol class="steps">
+      <li><span>Нарезать по карте распила, зачистить, покрасить или покрыть маслом до сборки.</span></li>
+      <li><span>Собрать раму на полу: торцевые снаружи, боковые между ними. Узлы стянуть шурупами 6×120, по 2 на узел. Диагонали — разница не более 3 мм.</span></li>
+      <li><span>Опорные брусья изнутри к боковым, верх вровень. Просверлить, затянуть потайными болтами M8×100, по 5 на сторону.</span></li>
+      <li><span>Центральный брус по оси, верх вровень с опорными. Снизу прикрутить пластины к центральному и торцевому брусу, по 4 шурупа.</span></li>
+      <li><span>Уголки A, шурупы 4×40: 4 внутри в углах опорный брус–торец, 4 на Т-узлы центрального бруса, 4 плоских снизу в углах боковой–торец.</span></li>
+      <li><span>Перевернуть раму. 7 ножек: прикрутить уголками B и шурупами 6×100 сверху. На ножки — фетр.</span></li>
+      <li><span>Поставить на ножки, выставить по уровню.</span></li>
+      <li><span>Рейки 95×20: две половины по 797 мм, зазор 6 мм по оси, шаг ровный, между рейками ≈36 мм. Каждую — двумя шурупами 4×35 к опорному и центральному брусу.</span></li>
+      <li><span>Боковины снаружи рамы шурупами 5×50: длинные по бокам, короткие (1730) по торцам. Низ вровень с низом рамы.</span></li>
+      <li><span>Положить матрас 1600×2000.</span></li>
+    </ol>
+    <div class="warn">Модель проверена только на пересечения деталей. Кровать по ней ещё не собирали: отверстия, длину болтов и подгонку проверяй по месту.</div>
+  </section>
+
+  <section>
+    <div class="label">Что мы сделали</div>
+    <h2>От эскиза до файлов</h2>
+    <ol class="steps">
+      <li><span>Отец нарисовал кровать от руки: размеры, брус, рейки, уголки. Эскиз читается местами неуверенно, например число реек. Такие места вынесли в параметры модели (<span class="mono">n_slats</span>: 7 по эскизу, 15 по умолчанию).</span></li>
+      <li><span>Через MCP-сервер Claude построил модель в бесплатном FreeCAD, все размеры на листе <span class="mono">Params</span>. Проверил: 70 тел, пересечений нет.</span></li>
+      <li><span>Выгрузили DXF для чертежа, STEP для любой CAD и карту распила.</span></li>
+      <li><span>Через второй MCP-сервер перенесли модель в Blender: материалы, свет, рендеры. 3D выше — та же модель в браузере.</span></li>
+      <li><span>Подобрали детали и цены в Петровиче и Максидоме. Идея на будущее: фотографировать такие эскизы, получать модель и список покупок.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="label">Файлы · скачать</div>
+    <h2>Что чем открыть</h2>
+    <div class="files">
+      <div><span><a href="files/bed_drawing.dxf" download>bed_drawing.dxf</a></span><span>AutoCAD: чертёж с размерами, мм</span></div>
+      <div><span><a href="files/bed_3d.step" download>bed_3d.step</a></span><span>3D-сборка для любой CAD</span></div>
+      <div><span><a href="files/bed.FCStd" download>bed.FCStd</a></span><span>FreeCAD: исходник, размеры менять на листе Params</span></div>
+      <div><span><a href="files/cutlist.md" download>cutlist.md</a></span><span>карта распила и крепёж, текст</span></div>
+      <div><span><a href="model.glb" download>model.glb</a></span><span>модель для 3D-просмотра в браузере</span></div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+// ---- gallery: rendered photos first, live 3D on demand
+const PHOTOS = [["01", "Вид 1"], ["02", "Вид 2"], ["03", "Вид 3"]];
+const src = id => "img/" + id + ".jpg";
+const photo = document.getElementById("photo"), viewerEl = document.getElementById("viewer"), toolbar = document.getElementById("toolbar"), badge = document.getElementById("badge");
+document.getElementById("plan").src = src("04");
+const thumbs = document.getElementById("thumbs"), tbtn = [];
+function show(i) {
+  tbtn.forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+  const is3d = i === PHOTOS.length;
+  photo.hidden = is3d; viewerEl.hidden = !is3d; toolbar.hidden = !is3d;
+  badge.textContent = is3d ? "3D · тяни, чтобы покрутить" : "Рендер Blender";
+  if (is3d) start3d(); else { photo.src = src(PHOTOS[i][0]); photo.alt = "Кровать 160×200, " + PHOTOS[i][1].toLowerCase(); }
+}
+PHOTOS.forEach(([id, name], i) => {
+  const b = document.createElement("button"); b.className = "thumb"; b.setAttribute("aria-label", name);
+  const im = new Image(); im.src = src(id); im.alt = ""; const c = document.createElement("span"); c.textContent = name;
+  b.append(im, c); b.onclick = () => show(i); thumbs.append(b); tbtn.push(b);
+});
+{ const b = document.createElement("button"); b.className = "thumb"; b.setAttribute("aria-label", "3D-модель");
+  const i3 = document.createElement("i"); i3.textContent = "3D"; const c = document.createElement("span"); c.textContent = "Покрутить";
+  b.append(i3, c); b.onclick = () => show(PHOTOS.length); thumbs.append(b); tbtn.push(b); }
+show(0);
+
+let started = false;
+async function start3d() {
+  if (started) return; started = true;
+  const THREE = await import("three");
+  const { OrbitControls } = await import("three/addons/controls/OrbitControls.js");
+  const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+  const { RoomEnvironment } = await import("three/addons/environments/RoomEnvironment.js");
+
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const el = viewerEl;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; el.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.minDistance = 2; controls.maxDistance = 14; controls.maxPolarAngle = Math.PI * 0.49; controls.autoRotateSpeed = 0.8;
+  const target = new THREE.Vector3(0, 0.15, 0);
+  camera.position.set(3.4, 3.1, 5.2); controls.target.copy(target);
+
+  const key = new THREE.DirectionalLight(0xfff4ea, 2.2); key.position.set(-2.5, 5, 3); key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -2.5, right: 2.5, top: 2.5, bottom: -2.5, near: 1, far: 12 }); key.shadow.bias = -0.0005;
+  scene.add(key);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.4 }));
+  floor.receiveShadow = true; scene.add(floor);
+
+  const groups = { boards: [], slats: [], metal: [] }, loading = document.getElementById("loading");
+  new GLTFLoader().load("model.glb", gltf => {
+    const model = gltf.scene; let box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
+    model.position.set(-c.x, -box.min.y, -c.z); scene.add(model);
+    model.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      const n = o.name + "|" + (o.parent ? o.parent.name : "");
+      if (/Board_/.test(n)) groups.boards.push(o); else if (/Slat_/.test(n)) groups.slats.push(o); else if (/Brk|Plate_/.test(n)) groups.metal.push(o);
+      if (o.material) { o.material.roughness = /Brk|Plate_/.test(n) ? 0.4 : 0.75; o.material.metalness = /Brk|Plate_/.test(n) ? 0.7 : 0; }
+    });
+    loading.hidden = true;
+  }, e => { if (e.total) loading.textContent = "Загружаю 3D… " + Math.round(e.loaded / e.total * 100) + "%"; }, () => { loading.textContent = "3D не загрузилось. Обнови страницу."; });
+
+  let idle = null;
+  function pauseSpin() { controls.autoRotate = false; clearTimeout(idle); if (!reduce) idle = setTimeout(() => { controls.autoRotate = true; }, 7000); }
+  controls.addEventListener("start", pauseSpin); if (!reduce) controls.autoRotate = true;
+  for (const k of ["boards", "slats", "metal"]) { const b = document.getElementById("b-" + k);
+    b.onclick = () => { const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); groups[k].forEach(o => { o.visible = on; }); }; }
+  document.getElementById("b-full").onclick = () => { (document.fullscreenElement ? document.exitFullscreen() : document.getElementById("stage").requestFullscreen?.())?.catch?.(() => {}); };
+
+  const resize = () => { const w = el.clientWidth, h = el.clientHeight; if (!w) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+  new ResizeObserver(resize).observe(el); resize();
+  renderer.setAnimationLoop(() => { if (el.hidden) return; controls.update(); renderer.render(scene, camera); });
+}
+</script>
+
+</body>
+</html>
