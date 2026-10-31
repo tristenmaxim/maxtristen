@@ -14,9 +14,24 @@ import db
 import gemini
 import library
 import worker
+from google.genai import errors as genai_errors
 
 
 class MediaTests(unittest.TestCase):
+    def test_quota_error_uses_fallback_model(self):
+        quota = genai_errors.ClientError(429, {'error': {'message': 'quota exhausted'}})
+        response = SimpleNamespace(text='ok')
+        with patch.object(gemini._client.models, 'generate_content', side_effect=[quota, response]) as generate:
+            self.assertIs(gemini.generate(['input'], {}), response)
+        self.assertEqual(generate.call_count, 2)
+
+    def test_other_client_error_does_not_use_fallback(self):
+        error = genai_errors.ClientError(400, {'error': {'message': 'invalid request'}})
+        with patch.object(gemini._client.models, 'generate_content', side_effect=error) as generate:
+            with self.assertRaises(genai_errors.ClientError):
+                gemini.generate(['input'], {})
+        generate.assert_called_once()
+
     def test_short_tiktok_url_resolves_to_photo_post(self):
         with patch.object(library.httpx, 'head', return_value=SimpleNamespace(url='https://www.tiktok.com/@u/photo/123')):
             self.assertEqual(library.tiktok_photo_url('https://vt.tiktok.com/test'), 'https://www.tiktok.com/@u/photo/123')

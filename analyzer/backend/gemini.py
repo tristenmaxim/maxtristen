@@ -30,6 +30,9 @@ def generate(contents, config):
         except (genai_errors.ServerError, httpx.TimeoutException):
             if index == len(models) - 1:
                 raise
+        except genai_errors.ClientError as error:
+            if error.code != 429 or index == len(models) - 1:
+                raise
 
 
 def transcribe(file_path: str) -> str:
