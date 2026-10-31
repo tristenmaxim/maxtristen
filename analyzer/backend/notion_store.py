@@ -57,6 +57,6 @@ def append_file(page_id, path):
     upload = request('POST', '/file_uploads', json={'filename': os.path.basename(path), 'content_type': mime})
     with open(path, 'rb') as f:
         request('POST', '/file_uploads/' + upload['id'] + '/send', files={'file': (os.path.basename(path), f, mime)})
-    kind = 'video' if mime.startswith('video/') else 'image' if mime.startswith('image/') else 'file'
+    kind = 'video' if mime.startswith('video/') else 'image' if mime.startswith('image/') else 'audio' if mime.startswith('audio/') else 'file'
     block = {'object': 'block', 'type': kind, kind: {'type': 'file_upload', 'file_upload': {'id': upload['id']}}}
     request('PATCH', f'/blocks/{page_id}/children', json={'children': [block]})

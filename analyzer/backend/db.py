@@ -4,7 +4,7 @@ from typing import Optional
 
 DB_PATH = os.getenv("ANALYZER_DB_PATH", os.path.join(os.path.dirname(__file__), ".local-data", "analyzer.db"))
 
-_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url", "saved_text", "saved_transcript", "saved_media"}
+_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url", "saved_text", "saved_transcript", "saved_visual_text", "saved_media"}
 
 
 def _connect():
@@ -43,7 +43,8 @@ def init_db():
         for column, definition in (
             ('job_state', 'TEXT'), ('attempts', 'INTEGER NOT NULL DEFAULT 0'),
             ('next_attempt', 'TEXT'), ('saved_text', 'INTEGER NOT NULL DEFAULT 0'),
-            ('saved_transcript', 'INTEGER NOT NULL DEFAULT 0'), ('saved_media', 'INTEGER NOT NULL DEFAULT 0'),
+            ('saved_transcript', 'INTEGER NOT NULL DEFAULT 0'), ('saved_visual_text', 'INTEGER NOT NULL DEFAULT 0'),
+            ('saved_media', 'INTEGER NOT NULL DEFAULT 0'),
         ):
             if column not in columns:
                 conn.execute(f'ALTER TABLE entries ADD COLUMN {column} {definition}')

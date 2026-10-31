@@ -135,7 +135,7 @@ class QueueTests(unittest.TestCase):
             return 'post text', paths
         with patch.object(worker.pipeline, 'FILES_DIR', self.temp.name), \
              patch.object(worker.pipeline.library, 'tweet', side_effect=fetch), \
-             patch.object(worker.pipeline.library, 'describe', side_effect=[RuntimeError('temporary'), ('title', 'summary', [])]), \
+             patch.object(worker.pipeline.library, 'describe', side_effect=[RuntimeError('temporary'), ('title', 'summary', [], '')]), \
              patch.object(worker.pipeline.notion_store, 'create_entry', return_value={'id': 'page', 'url': 'https://example.com/page'}) as create, \
              patch.object(worker.pipeline.notion_store, 'append_text') as append_text, \
              patch.object(worker.pipeline.notion_store, 'append_file') as append_file, \

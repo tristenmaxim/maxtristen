@@ -64,18 +64,20 @@ def process_entry(entry_id: int) -> None:
         file_path = row['file_path']
         text = ''
         extra_files = []
-        if row['source_type'] == 'url' and library.source_for(row['source_ref']) in ('X', 'Instagram'):
-            fetch = library.tweet if library.source_for(row['source_ref']) == 'X' else library.instagram
-            text, extra_files = fetch(row['source_ref'], tempdir)
+        source = library.source_for(row['source_ref']) if row['source_type'] == 'url' else None
+        photo_url = library.tiktok_photo_url(row['source_ref']) if source == 'TikTok' and not file_path else None
+        if source in ('X', 'Instagram') or photo_url:
+            fetch = library.tweet if source == 'X' else library.instagram if source == 'Instagram' else library.tiktok_photos
+            text, extra_files = fetch(photo_url or row['source_ref'], tempdir)
             original_dir = os.path.join(FILES_DIR, f'{entry_id}-originals')
             os.makedirs(original_dir, exist_ok=True)
             for i, item in enumerate(extra_files):
                 target = os.path.join(original_dir, os.path.basename(item))
                 shutil.copyfile(item, target)
                 extra_files[i] = target
-            videos = [p for p in extra_files if p.endswith('.mp4')]
-            if videos:
-                file_path = videos[0]
+            recordings = [p for p in extra_files if p.lower().endswith(('.mp4', '.mp3', '.m4a', '.aac', '.wav', '.ogg'))]
+            if recordings:
+                file_path = recordings[0]
         elif not file_path and row['source_type'] == 'telegram_video':
             db.update_entry(entry_id, status='downloading')
             file_path = os.path.join(FILES_DIR, f'{entry_id}.mp4')
@@ -90,16 +92,16 @@ def process_entry(entry_id: int) -> None:
         if file_path and not transcript:
             db.update_entry(entry_id, status="transcribing")
             transcript = gemini.transcribe(file_path)
-            for extra in [p for p in extra_files if p.endswith('.mp4') and p != file_path]:
+            for extra in [p for p in extra_files if p.lower().endswith(('.mp4', '.mp3', '.m4a', '.aac', '.wav', '.ogg')) and p != file_path]:
                 transcript += '\n\n' + gemini.transcribe(extra)
             db.update_entry(entry_id, transcript=transcript)
         if not text and not transcript and not extra_files:
             raise ValueError('Не удалось получить содержимое публикации')
         if page_id:
-            images = [p for p in extra_files if p.endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+            media = extra_files or ([file_path] if file_path else [])
             analysis_error = None
             try:
-                title, summary, tags = library.describe('\n\n'.join(x for x in (text, transcript) if x), images)
+                title, summary, tags, visual_text = library.describe('\n\n'.join(x for x in (text, transcript) if x), media)
             except Exception as error:
                 analysis_error = error
             if text and not row['saved_text']:
@@ -113,6 +115,9 @@ def process_entry(entry_id: int) -> None:
                                  on_saved=lambda count: db.update_entry(entry_id, saved_media=count))
             if analysis_error:
                 raise analysis_error
+            if visual_text and not row['saved_visual_text']:
+                notion_store.append_text(page_id, 'Текст на экране', visual_text)
+                db.update_entry(entry_id, saved_visual_text=1)
             notion_store.update_entry(page_id, title, summary, tags, 'Готово', library.source_for(source_url))
         transcript = transcript or text or 'Сохранено изображение.'
         db.update_entry(entry_id, status="done", transcript=transcript, error_message=None)

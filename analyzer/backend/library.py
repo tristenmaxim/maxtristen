@@ -2,6 +2,8 @@ import json
 import os
 import re
 import subprocess
+import sys
+import time
 from urllib.parse import urlparse
 
 import httpx
@@ -67,6 +69,44 @@ def instagram(url, directory):
     return data['text'], paths
 
 
+def tiktok_photo_url(url):
+    parsed = urlparse(url)
+    if '/photo/' in parsed.path:
+        return url
+    if '/video/' in parsed.path:
+        return None
+    response = httpx.head(url, headers={'User-Agent': 'Mozilla/5.0'}, follow_redirects=True, timeout=30)
+    final = str(response.url)
+    return final if '/photo/' in urlparse(final).path else None
+
+
+def tiktok_photos(url, directory):
+    result = subprocess.run([sys.executable, '-m', 'gallery_dl', '-j', url],
+                            capture_output=True, text=True, check=True, timeout=120)
+    records = json.loads(result.stdout)
+    text = next((r[-1].get('desc', '') for r in records if r[0] == 2 and isinstance(r[-1], dict)), '')
+    paths = []
+    allowed = {'jpeg': 'jpg', 'jpg': 'jpg', 'png': 'png', 'webp': 'webp',
+               'mp3': 'mp3', 'm4a': 'm4a', 'mp4': 'mp4', 'ogg': 'ogg'}
+    for record in records:
+        if record[0] != 3 or not isinstance(record[-1], dict):
+            continue
+        extension = allowed.get(str(record[-1].get('extension', '')).lower())
+        if not extension:
+            raise ValueError('Неподдерживаемый формат медиа в фотопосте TikTok')
+        path = os.path.join(directory, f'tiktok-{len(paths):04d}.{extension}')
+        with httpx.stream('GET', record[1], headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.tiktok.com/'},
+                          follow_redirects=True, timeout=120) as response:
+            response.raise_for_status()
+            with open(path, 'wb') as f:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
+        paths.append(path)
+    if not paths:
+        raise ValueError('Фотопост TikTok не содержит доступных файлов')
+    return text, paths
+
+
 def files_for_notion(path, workdir):
     if os.path.getsize(path) <= MAX_FILE:
         return [path]
@@ -77,6 +117,13 @@ def files_for_notion(path, workdir):
         if os.path.getsize(target) > MAX_FILE:
             raise ValueError('Не удалось уменьшить изображение до 5 МБ')
         return [target]
+    if ext in ('.mp3', '.m4a', '.aac', '.wav', '.ogg'):
+        template = os.path.join(workdir, 'audio-%04d.m4a')
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', path, '-vn', '-c:a', 'aac', '-b:a', '64k', '-f', 'segment', '-segment_time', '420', '-reset_timestamps', '1', template], check=True, timeout=1800)
+        parts = sorted(os.path.join(workdir, x) for x in os.listdir(workdir) if re.fullmatch(r'audio-\d+\.m4a', x))
+        if not parts or any(os.path.getsize(x) > MAX_FILE for x in parts):
+            raise ValueError('Не удалось разбить аудио на файлы меньше 5 МБ')
+        return parts
     template = os.path.join(workdir, 'part-%04d.mp4')
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', path, '-vf', 'scale=640:640:force_original_aspect_ratio=decrease:force_divisible_by=2', '-c:v', 'libx264', '-preset', 'fast', '-b:v', '400k', '-maxrate', '400k', '-bufsize', '800k', '-c:a', 'aac', '-b:a', '64k', '-f', 'segment', '-segment_time', '45', '-force_key_frames', 'expr:gte(t,n_forced*45)', '-reset_timestamps', '1', template], check=True, timeout=1800)
     parts = sorted(os.path.join(workdir, x) for x in os.listdir(workdir) if re.fullmatch(r'part-\d+\.mp4', x))
@@ -85,14 +132,35 @@ def files_for_notion(path, workdir):
     return parts
 
 
-def describe(text, images=()):
-    prompt = ('Проанализируй материал. Верни только JSON с полями title, summary и tags (массив из 2–6 кратких тегов на русском). Не выдумывай факты. Материал:\n' + text[:30000])
+def describe(text, media=()):
+    prompt = ('Проанализируй весь материал: видео, изображения, видимый на них текст, аудио и расшифровку. '
+              'Учитывай смысл изображения даже если на аудио только музыка. Утверждения авторов передавай как их слова, '
+              'не выдавай за проверенные факты и не выдумывай детали. Верни JSON с полями title, summary, '
+              'tags (2–6 коротких тегов на русском) и visual_text (значимый видимый текст на языке оригинала; '
+              'пустая строка, если текста нет или он неразборчив). Расшифровка и текст публикации:\n' + text[:30000])
     contents = [prompt]
-    for image in images:
-        contents.append(gemini._client.files.upload(file=image))
-    result = gemini.generate(contents=contents, config={'response_mime_type': 'application/json', 'temperature': 0.2})
-    data = json.loads(result.text)
-    return str(data.get('title') or 'Материал'), str(data.get('summary') or ''), [str(x) for x in data.get('tags', []) if isinstance(x, str)]
+    uploaded = []
+    try:
+        for path in media:
+            item = gemini._client.files.upload(file=path)
+            uploaded.append(item)
+            deadline = time.monotonic() + 600
+            while item.state.name == 'PROCESSING' and time.monotonic() < deadline:
+                time.sleep(3)
+                item = gemini._client.files.get(name=item.name)
+            if item.state.name != 'ACTIVE':
+                raise RuntimeError(f'Не удалось подготовить медиа для анализа: {item.state.name}')
+            contents.append(item)
+        result = gemini.generate(contents=contents, config={'response_mime_type': 'application/json', 'temperature': 0.2})
+        data = json.loads(result.text)
+        tags = [str(x) for x in data.get('tags', []) if isinstance(x, str)]
+        return str(data.get('title') or 'Материал'), str(data.get('summary') or ''), tags, str(data.get('visual_text') or '')
+    finally:
+        for item in uploaded:
+            try:
+                gemini._client.files.delete(name=item.name)
+            except Exception:
+                pass
 
 
 def upload_media(page_id, paths, directory, saved=0, on_saved=None):

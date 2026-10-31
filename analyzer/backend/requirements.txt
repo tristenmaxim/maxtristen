@@ -6,3 +6,4 @@ httpx
 google-genai
 aiofiles
 eth_account
+gallery-dl==1.32.19

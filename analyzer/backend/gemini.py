@@ -16,7 +16,7 @@ GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.8-flash")
 _client = genai.Client(api_key=GEMINI_API_KEY, http_options=types.HttpOptions(timeout=90000))
 
 TRANSCRIBE_PROMPT = (
-    "Transcribe this video in full. Include timecodes (mm:ss) at natural breaks, "
+    "Transcribe the audio in this audio or video file in full. Include timecodes (mm:ss) at natural breaks, "
     "and label distinct speakers as 'Speaker 1:', 'Speaker 2:', etc. "
     "Output only the transcript, no preamble."
 )
