@@ -95,9 +95,15 @@ def describe(text, images=()):
     return str(data.get('title') or 'Материал'), str(data.get('summary') or ''), [str(x) for x in data.get('tags', []) if isinstance(x, str)]
 
 
-def upload_media(page_id, paths, directory):
+def upload_media(page_id, paths, directory, saved=0, on_saved=None):
+    position = 0
     for i, path in enumerate(paths):
         workdir = os.path.join(directory, f'prepared-{i}')
         os.makedirs(workdir, exist_ok=True)
         for part in files_for_notion(path, workdir):
+            position += 1
+            if position <= saved:
+                continue
             notion_store.append_file(page_id, part)
+            if on_saved:
+                on_saved(position)

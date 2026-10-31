@@ -74,8 +74,10 @@ def parse_update(update: dict) -> Optional[dict]:
         return {"chat_id": chat_id, "source_type": "telegram_video", "file_id": video["file_id"],
                 "wallet_address": wallet}
 
-    match = re.search(r'https?://[^\s<>]+', text)
-    if match:
-        return {"chat_id": chat_id, "source_type": "url", "url": match.group(0).rstrip('.,)'), "wallet_address": wallet}
+    urls = [x.rstrip('.,;!?)]»') for x in re.findall(r'https?://[^\s<>]+', text)]
+    urls += [e['url'] for e in message.get('entities', []) if e.get('type') == 'text_link' and e.get('url', '').startswith(('http://', 'https://'))]
+    urls = list(dict.fromkeys(urls))
+    if urls:
+        return {"chat_id": chat_id, "source_type": "url", "urls": urls, "wallet_address": wallet}
 
     return None

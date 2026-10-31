@@ -4,7 +4,7 @@ from typing import Optional
 
 DB_PATH = os.getenv("ANALYZER_DB_PATH", os.path.join(os.path.dirname(__file__), ".local-data", "analyzer.db"))
 
-_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url"}
+_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url", "saved_text", "saved_transcript", "saved_media"}
 
 
 def _connect():
@@ -36,9 +36,20 @@ def init_db():
             """
         )
         columns = {r[1] for r in conn.execute('PRAGMA table_info(entries)')}
+        migrating_queue = 'job_state' not in columns
         for column in ('notion_page_id', 'notion_url'):
             if column not in columns:
                 conn.execute(f'ALTER TABLE entries ADD COLUMN {column} TEXT')
+        for column, definition in (
+            ('job_state', 'TEXT'), ('attempts', 'INTEGER NOT NULL DEFAULT 0'),
+            ('next_attempt', 'TEXT'), ('saved_text', 'INTEGER NOT NULL DEFAULT 0'),
+            ('saved_transcript', 'INTEGER NOT NULL DEFAULT 0'), ('saved_media', 'INTEGER NOT NULL DEFAULT 0'),
+        ):
+            if column not in columns:
+                conn.execute(f'ALTER TABLE entries ADD COLUMN {column} {definition}')
+        if migrating_queue:
+            conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued' WHERE status IN ('queued', 'downloading', 'transcribing')")
+        conn.execute('CREATE TABLE IF NOT EXISTS telegram_updates (update_id INTEGER PRIMARY KEY)')
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS sessions (
@@ -61,14 +72,87 @@ def init_db():
 
 
 def create_entry(wallet_address: str, source_type: str, source_ref: Optional[str] = None,
-                  telegram_chat_id: Optional[int] = None, file_path: Optional[str] = None) -> int:
+                  telegram_chat_id: Optional[int] = None, file_path: Optional[str] = None,
+                  queued: bool = False) -> int:
     with _connect() as conn:
         cur = conn.execute(
-            "INSERT INTO entries (wallet_address, source_type, source_ref, telegram_chat_id, file_path) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (wallet_address, source_type, source_ref, telegram_chat_id, file_path),
+            "INSERT INTO entries (wallet_address, source_type, source_ref, telegram_chat_id, file_path, job_state) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (wallet_address, source_type, source_ref, telegram_chat_id, file_path, 'pending' if queued else None),
         )
         return cur.lastrowid
+
+
+def enqueue(entry_id: int) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued', next_attempt = NULL WHERE id = ?", (entry_id,))
+
+
+def enqueue_telegram_urls(wallet: str, urls: list, chat_id: int, update_id: Optional[int]) -> tuple:
+    with _connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        if update_id is not None:
+            if conn.execute('INSERT OR IGNORE INTO telegram_updates(update_id) VALUES (?)', (update_id,)).rowcount == 0:
+                return 0, 0, True
+        added = duplicates = 0
+        for url in dict.fromkeys(urls):
+            existing = conn.execute(
+                "SELECT id, job_state FROM entries WHERE wallet_address = ? AND source_type = 'url' AND source_ref = ? "
+                "AND (job_state IN ('pending', 'running', 'failed') OR (status = 'done' AND notion_url IS NOT NULL)) "
+                "ORDER BY CASE WHEN status = 'done' THEN 0 WHEN job_state IN ('pending', 'running') THEN 1 ELSE 2 END, id DESC LIMIT 1",
+                (wallet, url),
+            ).fetchone()
+            if existing:
+                if existing['job_state'] == 'failed':
+                    conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued', attempts = 0, next_attempt = NULL, telegram_chat_id = ? WHERE id = ?", (chat_id, existing['id']))
+                    added += 1
+                    continue
+                duplicates += 1
+                continue
+            conn.execute("INSERT INTO entries(wallet_address, source_type, source_ref, telegram_chat_id, job_state) VALUES (?, 'url', ?, ?, 'pending')", (wallet, url, chat_id))
+            added += 1
+        return added, duplicates, False
+
+
+def enqueue_telegram_file(wallet: str, file_id: str, chat_id: int, update_id: Optional[int]) -> bool:
+    with _connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        if update_id is not None:
+            if conn.execute('INSERT OR IGNORE INTO telegram_updates(update_id) VALUES (?)', (update_id,)).rowcount == 0:
+                return False
+        conn.execute("INSERT INTO entries(wallet_address, source_type, source_ref, telegram_chat_id, job_state) VALUES (?, 'telegram_video', ?, ?, 'pending')", (wallet, file_id, chat_id))
+        return True
+
+
+def recover_jobs() -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE entries SET job_state = 'done', next_attempt = NULL WHERE job_state = 'running' AND status = 'done'")
+        conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued', next_attempt = NULL, attempts = MAX(attempts - 1, 0) WHERE job_state = 'running'")
+
+
+def claim_job() -> Optional[dict]:
+    with _connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        row = conn.execute("SELECT id FROM entries WHERE job_state = 'pending' AND (next_attempt IS NULL OR next_attempt <= datetime('now')) ORDER BY id LIMIT 1").fetchone()
+        if row is None:
+            return None
+        conn.execute("UPDATE entries SET job_state = 'running', attempts = attempts + 1, updated_at = datetime('now') WHERE id = ?", (row['id'],))
+        return dict(conn.execute('SELECT * FROM entries WHERE id = ?', (row['id'],)).fetchone())
+
+
+def finish_job(entry_id: int) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE entries SET job_state = 'done', next_attempt = NULL WHERE id = ?", (entry_id,))
+
+
+def retry_job(entry_id: int, error: str, delay: int) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued', error_message = ?, next_attempt = datetime('now', ?), updated_at = datetime('now') WHERE id = ?", (error, f'+{delay} seconds', entry_id))
+
+
+def fail_job(entry_id: int, error: str) -> None:
+    with _connect() as conn:
+        conn.execute("UPDATE entries SET job_state = 'failed', status = 'error', error_message = ?, updated_at = datetime('now') WHERE id = ?", (error, entry_id))
 
 
 def update_entry(entry_id: int, **fields) -> None:

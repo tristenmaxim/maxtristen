@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +13,7 @@ import auth
 import db
 import pipeline
 import telegram
+import worker
 
 app = FastAPI()
 
@@ -31,6 +32,12 @@ app.mount("/assets", StaticFiles(directory="../frontend/assets"), name="assets")
 def startup():
     db.init_db()
     os.makedirs(pipeline.FILES_DIR, exist_ok=True)
+    worker.start()
+
+
+@app.on_event('shutdown')
+def shutdown():
+    worker.stop()
 
 
 def require_wallet(request: Request) -> str:
@@ -85,7 +92,6 @@ async def telegram_link_code(wallet: str = Depends(require_wallet)):
 
 @app.post("/api/entries")
 async def create_entry(
-    background_tasks: BackgroundTasks,
     url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     wallet: str = Depends(require_wallet),
@@ -106,7 +112,8 @@ async def create_entry(
     else:
         entry_id = db.create_entry(wallet_address=wallet, source_type="url", source_ref=url)
 
-    background_tasks.add_task(pipeline.process_entry, entry_id)
+    db.enqueue(entry_id)
+    worker.wake()
     return {"id": entry_id}
 
 
@@ -124,7 +131,7 @@ async def get_entry(entry_id: int, wallet: str = Depends(require_wallet)):
 
 
 @app.post("/telegram-webhook")
-async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
+async def telegram_webhook(request: Request):
     update = await request.json()
     parsed = telegram.parse_update(update)
     if parsed is None:
@@ -133,24 +140,22 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
     wallet = parsed["wallet_address"]
 
     if parsed['source_type'] == 'url':
-        existing = db.find_saved_url(wallet, parsed['url'])
-        if existing:
-            telegram.send_message(parsed['chat_id'], f"Уже сохранено: {existing['notion_url']}")
+        added, duplicates, repeated = db.enqueue_telegram_urls(wallet, parsed['urls'], parsed['chat_id'], update.get('update_id'))
+        if repeated:
             return {"ok": True}
+        message = f'Добавлено в очередь: {added}.'
+        if duplicates:
+            message += f' Уже сохранены или в очереди: {duplicates}.'
+        telegram.send_message(parsed['chat_id'], message)
+        worker.wake()
+        return {"ok": True}
 
     if parsed["source_type"] == "telegram_video":
-        entry_id = db.create_entry(wallet_address=wallet, source_type="telegram_video",
-                                    source_ref=parsed["file_id"], telegram_chat_id=parsed["chat_id"])
-        os.makedirs(pipeline.FILES_DIR, exist_ok=True)
-        dest_path = os.path.join(pipeline.FILES_DIR, f"{entry_id}.mp4")
-        telegram.download_telegram_file(parsed["file_id"], dest_path)
-        db.update_entry(entry_id, file_path=dest_path)
-    else:
-        entry_id = db.create_entry(wallet_address=wallet, source_type="url",
-                                    source_ref=parsed["url"], telegram_chat_id=parsed["chat_id"])
+        if not db.enqueue_telegram_file(wallet, parsed['file_id'], parsed['chat_id'], update.get('update_id')):
+            return {"ok": True}
 
-    telegram.send_message(parsed["chat_id"], "Обрабатываю…")
-    background_tasks.add_task(pipeline.process_entry, entry_id)
+    telegram.send_message(parsed["chat_id"], "Добавлено в очередь.")
+    worker.wake()
     return {"ok": True}
 
 

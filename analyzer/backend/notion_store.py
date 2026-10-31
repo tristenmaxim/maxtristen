@@ -41,6 +41,10 @@ def update_entry(page_id, title, description, tags, status, source=None):
     request('PATCH', '/pages/' + page_id, json={'properties': properties})
 
 
+def set_status(page_id, status):
+    request('PATCH', '/pages/' + page_id, json={'properties': {'Статус': {'select': {'name': status}}}})
+
+
 def append_text(page_id, heading, text):
     blocks = [{'object': 'block', 'type': 'heading_2', 'heading_2': {'rich_text': rich(heading)}}]
     blocks += [{'object': 'block', 'type': 'paragraph', 'paragraph': {'rich_text': rich(text[i:i + 1900])}} for i in range(0, len(text), 1900)]

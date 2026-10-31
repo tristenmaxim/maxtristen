@@ -10,6 +10,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import compression from "express-compression";
+import { randomUUID } from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -187,7 +188,7 @@ function downloadVideo(finalUrl, videoId) {
       url: finalUrl  // Store the URL in the download object
     });
     
-    const outputTemplate = path.join(downloadsDir, "%(title)s.%(ext)s");
+    const outputTemplate = path.join(downloadsDir, `${videoId}-%(title).150B.%(ext)s`);
 
     const args = [
       "-f",
@@ -293,10 +294,10 @@ app.get('/progress/:videoId', (req, res) => {
 app.post("/download", async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "No URL provided" });
+  const videoId = `${Date.now()}-${randomUUID()}`;
 
   try {
     // Generate a unique ID for this download
-    const videoId = Date.now().toString();
     console.log(`[NEW DOWNLOAD] VideoID: ${videoId}`);
     
     // Pre-initialize the download entry to ensure it's there
@@ -336,7 +337,6 @@ app.post("/download", async (req, res) => {
     console.log(`[DOWNLOAD FINISHED] VideoID: ${videoId}`);
   } catch (err) {
     console.error(`[DOWNLOAD ERROR]`, err.message);
-    const videoId = err.videoId || req.body.videoId;
     if (videoId) {
       const currentDownload = downloads.get(videoId) || {};
       downloads.set(videoId, { 
