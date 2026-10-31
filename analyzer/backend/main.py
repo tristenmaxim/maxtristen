@@ -132,6 +132,12 @@ async def telegram_webhook(request: Request, background_tasks: BackgroundTasks):
 
     wallet = parsed["wallet_address"]
 
+    if parsed['source_type'] == 'url':
+        existing = db.find_saved_url(wallet, parsed['url'])
+        if existing:
+            telegram.send_message(parsed['chat_id'], f"Уже сохранено: {existing['notion_url']}")
+            return {"ok": True}
+
     if parsed["source_type"] == "telegram_video":
         entry_id = db.create_entry(wallet_address=wallet, source_type="telegram_video",
                                     source_ref=parsed["file_id"], telegram_chat_id=parsed["chat_id"])

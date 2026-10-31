@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Optional
 
 import httpx
@@ -67,10 +68,14 @@ def parse_update(update: dict) -> Optional[dict]:
 
     video = message.get("video") or message.get("document")
     if video:
+        if video.get('file_size', 0) > 20_000_000:
+            send_message(chat_id, 'Telegram не позволяет боту скачать этот файл: предел — 20 МБ. Пришли ссылку или файл меньшего размера.')
+            return None
         return {"chat_id": chat_id, "source_type": "telegram_video", "file_id": video["file_id"],
                 "wallet_address": wallet}
 
-    if text.startswith("http://") or text.startswith("https://"):
-        return {"chat_id": chat_id, "source_type": "url", "url": text, "wallet_address": wallet}
+    match = re.search(r'https?://[^\s<>]+', text)
+    if match:
+        return {"chat_id": chat_id, "source_type": "url", "url": match.group(0).rstrip('.,)'), "wallet_address": wallet}
 
     return None

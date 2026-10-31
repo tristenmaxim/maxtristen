@@ -4,7 +4,7 @@ from typing import Optional
 
 DB_PATH = os.getenv("ANALYZER_DB_PATH", os.path.join(os.path.dirname(__file__), ".local-data", "analyzer.db"))
 
-_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path"}
+_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url"}
 
 
 def _connect():
@@ -35,6 +35,10 @@ def init_db():
             )
             """
         )
+        columns = {r[1] for r in conn.execute('PRAGMA table_info(entries)')}
+        for column in ('notion_page_id', 'notion_url'):
+            if column not in columns:
+                conn.execute(f'ALTER TABLE entries ADD COLUMN {column} TEXT')
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS sessions (
@@ -84,6 +88,15 @@ def update_entry(entry_id: int, **fields) -> None:
 def get_entry(entry_id: int) -> Optional[dict]:
     with _connect() as conn:
         row = conn.execute("SELECT * FROM entries WHERE id = ?", (entry_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def find_saved_url(wallet_address: str, url: str) -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT notion_url FROM entries WHERE wallet_address = ? AND source_type = 'url' AND source_ref = ? AND status = 'done' AND notion_url IS NOT NULL ORDER BY id DESC LIMIT 1",
+            (wallet_address, url),
+        ).fetchone()
         return dict(row) if row else None
 
 

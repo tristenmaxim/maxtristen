@@ -10,6 +10,7 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.8-flash")
 
 _client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -18,6 +19,15 @@ TRANSCRIBE_PROMPT = (
     "and label distinct speakers as 'Speaker 1:', 'Speaker 2:', etc. "
     "Output only the transcript, no preamble."
 )
+
+
+def generate(contents, config):
+    try:
+        return _client.models.generate_content(model=GEMINI_MODEL, contents=contents, config=config)
+    except genai_errors.ServerError:
+        if GEMINI_FALLBACK_MODEL == GEMINI_MODEL:
+            raise
+        return _client.models.generate_content(model=GEMINI_FALLBACK_MODEL, contents=contents, config=config)
 
 
 def transcribe(file_path: str) -> str:
@@ -33,8 +43,7 @@ def transcribe(file_path: str) -> str:
         if backoff:
             time.sleep(backoff)
         try:
-            response = _client.models.generate_content(
-                model=GEMINI_MODEL,
+            response = generate(
                 contents=[uploaded, TRANSCRIBE_PROMPT],
                 config=types.GenerateContentConfig(temperature=0.2),
             )
