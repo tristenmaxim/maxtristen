@@ -4,6 +4,7 @@ import time
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
+import httpx
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
@@ -12,7 +13,7 @@ if not GEMINI_API_KEY:
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.8-flash")
 
-_client = genai.Client(api_key=GEMINI_API_KEY)
+_client = genai.Client(api_key=GEMINI_API_KEY, http_options=types.HttpOptions(timeout=90000))
 
 TRANSCRIBE_PROMPT = (
     "Transcribe this video in full. Include timecodes (mm:ss) at natural breaks, "
@@ -22,12 +23,13 @@ TRANSCRIBE_PROMPT = (
 
 
 def generate(contents, config):
-    try:
-        return _client.models.generate_content(model=GEMINI_MODEL, contents=contents, config=config)
-    except genai_errors.ServerError:
-        if GEMINI_FALLBACK_MODEL == GEMINI_MODEL:
-            raise
-        return _client.models.generate_content(model=GEMINI_FALLBACK_MODEL, contents=contents, config=config)
+    models = list(dict.fromkeys((GEMINI_MODEL, GEMINI_FALLBACK_MODEL, 'gemini-3.1-flash-lite')))
+    for index, model in enumerate(models):
+        try:
+            return _client.models.generate_content(model=model, contents=contents, config=config)
+        except (genai_errors.ServerError, httpx.TimeoutException):
+            if index == len(models) - 1:
+                raise
 
 
 def transcribe(file_path: str) -> str:

@@ -29,13 +29,15 @@ def create_entry(url, source):
     return request('POST', '/pages', json={'parent': {'database_id': DATABASE}, 'properties': properties})
 
 
-def update_entry(page_id, title, description, tags, status):
+def update_entry(page_id, title, description, tags, status, source=None):
     properties = {
         'Название': {'title': rich(title[:1900])},
         'Описание': {'rich_text': rich(description[:1900])},
         'Теги': {'multi_select': [{'name': t[:80]} for t in tags[:8] if t and ',' not in t]},
         'Статус': {'select': {'name': status}},
     }
+    if source:
+        properties['Источник'] = {'select': {'name': source}}
     request('PATCH', '/pages/' + page_id, json={'properties': properties})
 
 

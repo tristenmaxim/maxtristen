@@ -18,6 +18,8 @@ def source_for(url):
         return 'TikTok'
     if host in ('x.com', 'twitter.com', 'www.x.com', 'www.twitter.com', 'mobile.twitter.com'):
         return 'X'
+    if host == 'instagram.com' or host.endswith('.instagram.com'):
+        return 'Instagram'
     return 'Другое' if url else 'Telegram'
 
 
@@ -45,6 +47,24 @@ def tweet(url, directory):
                     f.write(chunk)
         paths.append(path)
     return text, paths
+
+
+def instagram(url, directory):
+    extracted = subprocess.run(['/usr/bin/python3', os.path.join(os.path.dirname(__file__), 'instagram_extract.py'), url],
+                               capture_output=True, text=True, check=True, timeout=120)
+    data = json.loads(extracted.stdout)
+    paths = []
+    for index, item in enumerate(data['media']):
+        ext = '.jpg' if item['type'] == 'image' else '.mp4'
+        path = os.path.join(directory, f'instagram-{index}{ext}')
+        with httpx.stream('GET', item['url'], headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.instagram.com/'},
+                          follow_redirects=True, timeout=120) as result:
+            result.raise_for_status()
+            with open(path, 'wb') as f:
+                for chunk in result.iter_bytes():
+                    f.write(chunk)
+        paths.append(path)
+    return data['text'], paths
 
 
 def files_for_notion(path, workdir):
