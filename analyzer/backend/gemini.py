@@ -10,7 +10,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 GEMINI_FALLBACK_MODEL = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.8-flash")
 
 _client = genai.Client(api_key=GEMINI_API_KEY, http_options=types.HttpOptions(timeout=90000))
@@ -52,7 +52,7 @@ def transcribe(file_path: str) -> str:
                 contents=[uploaded, TRANSCRIBE_PROMPT],
                 config=types.GenerateContentConfig(temperature=0.2),
             )
-            return response.text
+            return response.text or ''
         except genai_errors.ServerError as e:
             last_error = e
     raise last_error

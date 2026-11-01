@@ -95,7 +95,7 @@ def process_entry(entry_id: int) -> None:
             for extra in [p for p in extra_files if p.lower().endswith(('.mp4', '.mp3', '.m4a', '.aac', '.wav', '.ogg')) and p != file_path]:
                 transcript += '\n\n' + gemini.transcribe(extra)
             db.update_entry(entry_id, transcript=transcript)
-        if not text and not transcript and not extra_files:
+        if not text and not transcript and not extra_files and not file_path:
             raise ValueError('Не удалось получить содержимое публикации')
         if page_id:
             media = extra_files or ([file_path] if file_path else [])
@@ -119,5 +119,5 @@ def process_entry(entry_id: int) -> None:
                 notion_store.append_text(page_id, 'Текст на экране', visual_text)
                 db.update_entry(entry_id, saved_visual_text=1)
             notion_store.update_entry(page_id, title, summary, tags, 'Готово', library.source_for(source_url))
-        transcript = transcript or text or 'Сохранено изображение.'
+        transcript = transcript or text or ('Речь не обнаружена.' if file_path else 'Сохранено изображение.')
         db.update_entry(entry_id, status="done", transcript=transcript, error_message=None)

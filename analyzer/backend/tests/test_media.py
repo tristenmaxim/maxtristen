@@ -18,6 +18,27 @@ from google.genai import errors as genai_errors
 
 
 class MediaTests(unittest.TestCase):
+    def test_video_without_speech_is_still_analyzed_and_saved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db.DB_PATH = os.path.join(directory, 'test.db')
+            db.init_db()
+            path = os.path.join(directory, 'video.mp4')
+            with open(path, 'wb') as f:
+                f.write(b'video')
+            entry = db.create_entry('wallet', 'web_upload', file_path=path, queued=True)
+            with patch.object(worker.pipeline, 'FILES_DIR', directory), \
+                 patch.object(gemini, 'transcribe', return_value=''), \
+                 patch.object(library, 'describe', return_value=('title', 'summary', ['tag'], 'visible')) as describe, \
+                 patch.object(worker.pipeline.notion_store, 'create_entry', return_value={'id': 'page', 'url': 'https://example.com/page'}), \
+                 patch.object(worker.pipeline.notion_store, 'append_text'), \
+                 patch.object(worker.pipeline.notion_store, 'append_file'), \
+                 patch.object(worker.pipeline.notion_store, 'update_entry'), patch.object(worker, 'notify'):
+                worker.process_job(db.claim_job())
+            row = db.get_entry(entry)
+            self.assertEqual(row['status'], 'done')
+            self.assertEqual(row['transcript'], 'Речь не обнаружена.')
+            self.assertEqual(describe.call_args.args[1], [path])
+
     def test_quota_error_uses_fallback_model(self):
         quota = genai_errors.ClientError(429, {'error': {'message': 'quota exhausted'}})
         response = SimpleNamespace(text='ok')
