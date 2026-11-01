@@ -96,7 +96,10 @@ def process_entry(entry_id: int) -> None:
                 db.update_entry(entry_id, status='done', transcript=transcript, error_message=None)
                 return
         photo_url = library.tiktok_photo_url(row['source_ref']) if source == 'TikTok' and not file_path else None
-        if source in ('X', 'Instagram') or photo_url:
+        if source == 'Другое' and not file_path:
+            db.update_entry(entry_id, status='downloading')
+            text = library.webpage(row['source_ref'])
+        elif source in ('X', 'Instagram') or photo_url:
             fetch = library.tweet if source == 'X' else library.instagram if source == 'Instagram' else library.tiktok_photos
             text, extra_files = fetch(photo_url or row['source_ref'], tempdir)
             original_dir = os.path.join(FILES_DIR, f'{entry_id}-originals')
@@ -135,7 +138,7 @@ def process_entry(entry_id: int) -> None:
             except Exception as error:
                 analysis_error = error
             if text and not row['saved_text']:
-                notion_store.append_text(page_id, 'Текст публикации', text)
+                notion_store.append_text(page_id, 'Текст страницы' if source == 'Другое' else 'Текст публикации', text)
                 db.update_entry(entry_id, saved_text=1)
             if transcript and not row['saved_transcript']:
                 notion_store.append_text(page_id, 'Расшифровка', transcript)

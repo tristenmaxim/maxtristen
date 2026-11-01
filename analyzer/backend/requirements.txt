@@ -7,3 +7,5 @@ google-genai
 aiofiles
 eth_account
 gallery-dl==1.32.19
+trafilatura
+lxml_html_clean

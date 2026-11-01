@@ -1,17 +1,51 @@
 import json
+import ipaddress
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
 from urllib.parse import parse_qs, urlparse
 
 import httpx
+import trafilatura
 
 import gemini
 import notion_store
 
 MAX_FILE = 4_500_000
+
+
+def webpage(url):
+    """Retrieve and extract readable text from a public HTML page."""
+    with httpx.Client(follow_redirects=False, timeout=30, trust_env=False,
+                      headers={'User-Agent': 'MeaninglyBot/1.0 (web page reader)'}) as client:
+        for _ in range(6):
+            parsed = urlparse(url)
+            if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password:
+                raise ValueError('Некорректная ссылка на страницу')
+            addresses = socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == 'https' else 80), type=socket.SOCK_STREAM)
+            if not addresses or any(not ipaddress.ip_address(item[4][0]).is_global for item in addresses):
+                raise ValueError('Страница должна находиться в публичной сети')
+            with client.stream('GET', url) as response:
+                if response.is_redirect:
+                    from urllib.parse import urljoin
+                    url = urljoin(url, response.headers['location'])
+                    continue
+                response.raise_for_status()
+                if 'text/html' not in response.headers.get('content-type', '').lower():
+                    raise ValueError('Ссылка ведёт не на HTML-страницу')
+                data = bytearray()
+                for chunk in response.iter_bytes():
+                    data.extend(chunk)
+                    if len(data) > 5_000_000:
+                        raise ValueError('Страница слишком большая для обработки')
+            text = trafilatura.extract(bytes(data), include_comments=False, include_tables=True)
+            if not text or not text.strip():
+                raise ValueError('Не удалось извлечь текст страницы: возможно, она недоступна без входа или загружается через JavaScript')
+            return text.strip()
+    raise ValueError('Слишком много перенаправлений страницы')
 
 
 def source_for(url):
@@ -182,7 +216,9 @@ def describe(text, media=()):
               'Учитывай смысл изображения даже если на аудио только музыка. Утверждения авторов передавай как их слова, '
               'не выдавай за проверенные факты и не выдумывай детали. Верни JSON с полями title, summary, '
               'tags (2–6 коротких тегов на русском) и visual_text (значимый видимый текст на языке оригинала; '
-              'пустая строка, если текста нет или он неразборчив). Расшифровка и текст публикации:\n' + text[:30000])
+              'пустая строка, если текста нет или он неразборчив). '
+              + ('Далее только начало длинного текста, не додумывай его продолжение. ' if len(text) > 30000 else '')
+              + 'Расшифровка и текст публикации:\n' + text[:30000])
     contents = [prompt]
     uploaded = []
     try:
