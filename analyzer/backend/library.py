@@ -4,7 +4,7 @@ import re
 import subprocess
 import sys
 import time
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
@@ -22,7 +22,52 @@ def source_for(url):
         return 'X'
     if host == 'instagram.com' or host.endswith('.instagram.com'):
         return 'Instagram'
+    if youtube_url(url):
+        return 'YouTube'
     return 'Другое' if url else 'Telegram'
+
+
+def youtube_url(url):
+    parsed = urlparse(url or '')
+    host = (parsed.hostname or '').lower()
+    if parsed.scheme not in ('http', 'https'):
+        return None
+    if host in ('youtu.be', 'www.youtu.be'):
+        video_id = parsed.path.strip('/').split('/')[0]
+    elif host in ('youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'):
+        parts = parsed.path.strip('/').split('/')
+        if parts[0] in ('shorts', 'live', 'embed') and len(parts) > 1:
+            video_id = parts[1]
+        elif parsed.path.rstrip('/') == '/watch':
+            video_id = parse_qs(parsed.query).get('v', [''])[0]
+        else:
+            return None
+    else:
+        return None
+    if not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id):
+        return None
+    return f'https://www.youtube.com/watch?v={video_id}'
+
+
+def youtube_metadata(url):
+    selection = 'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4][vcodec^=avc1]/best'
+    try:
+        result = subprocess.run(['yt-dlp', '--no-playlist', '--ignore-config', '--skip-download',
+                                 '--dump-single-json', '-f', selection, '--impersonate', 'chrome', youtube_url(url)],
+                                capture_output=True, text=True, check=True, timeout=90)
+        info = json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return {'size': None, 'duration': None, 'title': None}
+    formats = info.get('requested_formats') or []
+    sizes = [f.get('filesize') or f.get('filesize_approx') for f in formats]
+    size = sum(sizes) if sizes and all(isinstance(x, (int, float)) and x > 0 for x in sizes) else info.get('filesize') or info.get('filesize_approx')
+    if not isinstance(size, (int, float)) or size <= 0:
+        size = None
+    duration = info.get('duration')
+    if not isinstance(duration, (int, float)) or not 0 < duration < 604800:
+        duration = None
+    return {'size': int(size) if size else None, 'duration': float(duration) if duration else None,
+            'title': str(info.get('title') or '')[:500] or None}
 
 
 def tweet(url, directory):

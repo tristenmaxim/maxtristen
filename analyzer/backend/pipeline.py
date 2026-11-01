@@ -65,6 +65,36 @@ def process_entry(entry_id: int) -> None:
         text = ''
         extra_files = []
         source = library.source_for(row['source_ref']) if row['source_type'] == 'url' else None
+        if source == 'YouTube' and not file_path:
+            if not row.get('youtube_mode'):
+                metadata = library.youtube_metadata(row['source_ref'])
+                mode = 'direct' if metadata['size'] is None or metadata['size'] > 5_000_000 else 'download'
+                values = {'youtube_mode': mode, 'youtube_size': metadata['size'],
+                          'youtube_duration': metadata['duration'], 'youtube_title': metadata['title']}
+                db.update_entry(entry_id, **values)
+                row.update(values)
+            if row['youtube_mode'] == 'direct':
+                transcript = row.get('transcript') or ''
+                if not transcript:
+                    db.update_entry(entry_id, status='transcribing')
+                    transcript = gemini.transcribe_youtube(library.youtube_url(row['source_ref']), row.get('youtube_duration'),
+                        cached=db.youtube_parts(entry_id), on_part=lambda start, part: db.save_youtube_part(entry_id, start, part))
+                    db.update_entry(entry_id, transcript=transcript)
+                if page_id:
+                    if not row['saved_transcript']:
+                        notion_store.append_text(page_id, 'Расшифровка', transcript)
+                        db.update_entry(entry_id, saved_transcript=1)
+                    detail = 'Видео обработано по ссылке, копия файла не сохранялась.'
+                    if row.get('youtube_size') is None:
+                        detail += ' Размер файла определить не удалось.'
+                    if row.get('youtube_duration') is None:
+                        detail += ' Длительность определить не удалось; полноту расшифровки проверить не удалось.'
+                    if row.get('youtube_duration') and row['youtube_duration'] > 600:
+                        detail += ' Расшифровка выполнена по фрагментам; нумерация спикеров между ними может различаться.'
+                    notion_store.update_entry(page_id, row.get('youtube_title') or 'Видео YouTube', detail,
+                                              ['YouTube', 'транскрипция'], 'Готово', 'YouTube')
+                db.update_entry(entry_id, status='done', transcript=transcript, error_message=None)
+                return
         photo_url = library.tiktok_photo_url(row['source_ref']) if source == 'TikTok' and not file_path else None
         if source in ('X', 'Instagram') or photo_url:
             fetch = library.tweet if source == 'X' else library.instagram if source == 'Instagram' else library.tiktok_photos

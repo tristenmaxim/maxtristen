@@ -4,7 +4,7 @@ from typing import Optional
 
 DB_PATH = os.getenv("ANALYZER_DB_PATH", os.path.join(os.path.dirname(__file__), ".local-data", "analyzer.db"))
 
-_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url", "saved_text", "saved_transcript", "saved_visual_text", "saved_media"}
+_UPDATABLE_FIELDS = {"status", "error_message", "transcript", "file_path", "notion_page_id", "notion_url", "saved_text", "saved_transcript", "saved_visual_text", "saved_media", "youtube_mode", "youtube_duration", "youtube_title", "youtube_size"}
 
 
 def _connect():
@@ -45,12 +45,14 @@ def init_db():
             ('next_attempt', 'TEXT'), ('saved_text', 'INTEGER NOT NULL DEFAULT 0'),
             ('saved_transcript', 'INTEGER NOT NULL DEFAULT 0'), ('saved_visual_text', 'INTEGER NOT NULL DEFAULT 0'),
             ('saved_media', 'INTEGER NOT NULL DEFAULT 0'),
+            ('youtube_mode', 'TEXT'), ('youtube_duration', 'REAL'), ('youtube_title', 'TEXT'), ('youtube_size', 'INTEGER'),
         ):
             if column not in columns:
                 conn.execute(f'ALTER TABLE entries ADD COLUMN {column} {definition}')
         if migrating_queue:
             conn.execute("UPDATE entries SET job_state = 'pending', status = 'queued' WHERE status IN ('queued', 'downloading', 'transcribing')")
         conn.execute('CREATE TABLE IF NOT EXISTS telegram_updates (update_id INTEGER PRIMARY KEY)')
+        conn.execute('CREATE TABLE IF NOT EXISTS youtube_transcript_parts (entry_id INTEGER NOT NULL, start_seconds INTEGER NOT NULL, text TEXT NOT NULL, PRIMARY KEY (entry_id, start_seconds))')
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS sessions (
@@ -174,6 +176,16 @@ def get_entry(entry_id: int) -> Optional[dict]:
     with _connect() as conn:
         row = conn.execute("SELECT * FROM entries WHERE id = ?", (entry_id,)).fetchone()
         return dict(row) if row else None
+
+
+def youtube_parts(entry_id: int) -> dict:
+    with _connect() as conn:
+        return {r['start_seconds']: r['text'] for r in conn.execute('SELECT start_seconds, text FROM youtube_transcript_parts WHERE entry_id = ?', (entry_id,))}
+
+
+def save_youtube_part(entry_id: int, start: int, text: str) -> None:
+    with _connect() as conn:
+        conn.execute('INSERT OR REPLACE INTO youtube_transcript_parts(entry_id, start_seconds, text) VALUES (?, ?, ?)', (entry_id, start, text))
 
 
 def find_saved_url(wallet_address: str, url: str) -> Optional[dict]:
