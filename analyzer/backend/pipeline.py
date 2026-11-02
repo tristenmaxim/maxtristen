@@ -99,8 +99,8 @@ def process_entry(entry_id: int) -> None:
         if source == 'Другое' and not file_path:
             db.update_entry(entry_id, status='downloading')
             text = library.webpage(row['source_ref'])
-        elif source in ('X', 'Instagram') or photo_url:
-            fetch = library.tweet if source == 'X' else library.instagram if source == 'Instagram' else library.tiktok_photos
+        elif source in ('X', 'Instagram', 'Telegram') or photo_url:
+            fetch = library.tweet if source == 'X' else library.instagram if source == 'Instagram' else library.telegram_post if source == 'Telegram' else library.tiktok_photos
             text, extra_files = fetch(photo_url or row['source_ref'], tempdir)
             original_dir = os.path.join(FILES_DIR, f'{entry_id}-originals')
             os.makedirs(original_dir, exist_ok=True)

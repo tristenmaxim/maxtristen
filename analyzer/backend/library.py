@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import trafilatura
+from lxml import html as lxml_html
 
 import gemini
 import notion_store
@@ -50,6 +51,8 @@ def webpage(url):
 
 def source_for(url):
     host = urlparse(url or '').hostname or ''
+    if host in ('t.me', 'www.t.me', 'telegram.me', 'www.telegram.me'):
+        return 'Telegram'
     if host == 'tiktok.com' or host.endswith('.tiktok.com'):
         return 'TikTok'
     if host in ('x.com', 'twitter.com', 'www.x.com', 'www.twitter.com', 'mobile.twitter.com'):
@@ -59,6 +62,66 @@ def source_for(url):
     if youtube_url(url):
         return 'YouTube'
     return 'Другое' if url else 'Telegram'
+
+
+def telegram_post(url, directory):
+    parsed = urlparse(url)
+    match = re.fullmatch(r'/([A-Za-z][A-Za-z0-9_]{3,31})/(\d+)/?', parsed.path)
+    if parsed.scheme not in ('http', 'https') or parsed.hostname not in ('t.me', 'www.t.me', 'telegram.me', 'www.telegram.me') or not match:
+        raise ValueError('Поддерживаются только ссылки на публичные публикации Telegram')
+    channel, post_id = match.groups()
+    response = httpx.get(f'https://t.me/{channel}/{post_id}', params={'embed': '1'},
+                         headers={'User-Agent': 'Mozilla/5.0'}, timeout=30, follow_redirects=False)
+    response.raise_for_status()
+    doc = lxml_html.fromstring(response.content, parser=lxml_html.HTMLParser(encoding='utf-8'))
+    posts = doc.xpath('//*[@data-post]')
+    if len(posts) != 1 or posts[0].get('data-post', '').lower() != f'{channel}/{post_id}'.lower():
+        raise ValueError('Публикация Telegram недоступна или закрыта')
+    post = posts[0]
+    class_match = lambda name: f"contains(concat(' ', normalize-space(@class), ' '), ' {name} ')"
+    unsupported = ('tgme_widget_message_document_wrap', 'tgme_widget_message_voice_wrap',
+                   'tgme_widget_message_audio_wrap', 'tgme_widget_message_poll',
+                   'tgme_widget_message_unsupported')
+    if any(post.xpath(f'.//*[{class_match(name)}]') for name in unsupported):
+        raise ValueError('Формат вложения Telegram пока не поддерживается')
+    text_nodes = post.xpath(f'.//*[{class_match("tgme_widget_message_text")}]')
+    for node in text_nodes:
+        for br in node.xpath('.//br'):
+            br.tail = '\n' + (br.tail or '')
+        for link in node.xpath('.//a[@href]'):
+            href = link.get('href', '')
+            if href.startswith(('http://', 'https://')) and href not in link.text_content():
+                link.tail = f' ({href})' + (link.tail or '')
+    text = '\n\n'.join(n.text_content().strip() for n in text_nodes).strip()
+    media_urls = []
+    for video in post.xpath(f'.//video[{class_match("tgme_widget_message_video")}][@src]'):
+        media_urls.append((video.get('src'), '.mp4'))
+    for photo in post.xpath(f'.//*[{class_match("tgme_widget_message_photo_wrap")}][@style]'):
+        found = re.search(r"url\(['\"]?(.*?)['\"]?\)", photo.get('style'))
+        if not found:
+            raise ValueError('Не удалось получить изображение Telegram')
+        media_urls.append((found.group(1), '.jpg'))
+    if (post.xpath(f'.//*[{class_match("tgme_widget_message_video_wrap")}]') and not
+            post.xpath(f'.//video[{class_match("tgme_widget_message_video")}][@src]')):
+        raise ValueError('Не удалось получить видео Telegram')
+    if len(post.xpath(f'.//*[{class_match("tgme_widget_message_photo_wrap")}]')) != len(
+            post.xpath(f'.//*[{class_match("tgme_widget_message_photo_wrap")}][@style]')):
+        raise ValueError('Не удалось получить изображение Telegram')
+    if not text and not media_urls:
+        raise ValueError('Не удалось получить содержимое публикации Telegram')
+    paths = []
+    for i, (media_url, ext) in enumerate(media_urls):
+        host = urlparse(media_url).hostname or ''
+        if urlparse(media_url).scheme != 'https' or not (host.endswith('.telesco.pe') or host.endswith('.cdn-telegram.org')):
+            raise ValueError('Неожиданный адрес медиа Telegram')
+        path = os.path.join(directory, f'telegram-{i}{ext}')
+        with httpx.stream('GET', media_url, timeout=120, follow_redirects=False) as media:
+            media.raise_for_status()
+            with open(path, 'wb') as output:
+                for chunk in media.iter_bytes():
+                    output.write(chunk)
+        paths.append(path)
+    return text, paths
 
 
 def youtube_url(url):
@@ -214,7 +277,7 @@ def files_for_notion(path, workdir):
 def describe(text, media=()):
     prompt = ('Проанализируй весь материал: видео, изображения, видимый на них текст, аудио и расшифровку. '
               'Учитывай смысл изображения даже если на аудио только музыка. Утверждения авторов передавай как их слова, '
-              'не выдавай за проверенные факты и не выдумывай детали. Верни JSON с полями title, summary, '
+              'не выдавай за проверенные факты и не выдумывай детали. Верни один JSON-объект с полями title, summary, '
               'tags (2–6 коротких тегов на русском) и visual_text (значимый видимый текст на языке оригинала; '
               'пустая строка, если текста нет или он неразборчив). '
               + ('Далее только начало длинного текста, не додумывай его продолжение. ' if len(text) > 30000 else '')
@@ -234,7 +297,18 @@ def describe(text, media=()):
             contents.append(item)
         result = gemini.generate(contents=contents, config={'response_mime_type': 'application/json', 'temperature': 0.2})
         data = json.loads(result.text)
-        tags = [str(x) for x in data.get('tags', []) if isinstance(x, str)]
+        if isinstance(data, list):
+            if not data or any(not isinstance(item, dict) for item in data):
+                raise ValueError('Модель вернула некорректный результат анализа')
+            data = {
+                'title': next((item.get('title') for item in data if item.get('title')), ''),
+                'summary': '\n\n'.join(str(item['summary']) for item in data if item.get('summary')),
+                'tags': list(dict.fromkeys(tag for item in data for tag in (item.get('tags') if isinstance(item.get('tags'), list) else []) if isinstance(tag, str))),
+                'visual_text': '\n\n'.join(str(item['visual_text']) for item in data if item.get('visual_text')),
+            }
+        if not isinstance(data, dict):
+            raise ValueError('Модель вернула некорректный результат анализа')
+        tags = [x for x in data.get('tags', []) if isinstance(x, str)] if isinstance(data.get('tags'), list) else []
         return str(data.get('title') or 'Материал'), str(data.get('summary') or ''), tags, str(data.get('visual_text') or '')
     finally:
         for item in uploaded:

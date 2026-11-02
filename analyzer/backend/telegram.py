@@ -23,7 +23,19 @@ def send_message(chat_id: int, text: str, entry_id: Optional[int] = None) -> Non
     if len(text) > MAX_MESSAGE_LEN:
         link = f"{SITE_BASE_URL}/analyzer/#entry-{entry_id}" if entry_id else f"{SITE_BASE_URL}/analyzer/"
         text = text[:MAX_MESSAGE_LEN] + f"\n\n… обрезано, полностью тут: {link}"
-    httpx.post(f"{API_BASE}/sendMessage", json={"chat_id": chat_id, "text": text}, timeout=10)
+    try:
+        response = httpx.post(f"{API_BASE}/sendMessage", json={"chat_id": chat_id, "text": text}, timeout=10)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        raise RuntimeError(f'Не удалось отправить сообщение в Telegram: HTTP {error.response.status_code}') from None
+    except httpx.RequestError:
+        raise RuntimeError('Не удалось соединиться с Telegram для отправки сообщения') from None
+    try:
+        result = response.json()
+    except ValueError:
+        raise RuntimeError('Telegram вернул некорректный ответ на отправку сообщения') from None
+    if not isinstance(result, dict) or not result.get('ok'):
+        raise RuntimeError('Telegram не подтвердил отправку сообщения')
 
 
 def get_file_download_url(file_id: str) -> str:

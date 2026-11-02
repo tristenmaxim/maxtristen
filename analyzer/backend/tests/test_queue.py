@@ -90,7 +90,7 @@ class QueueTests(unittest.TestCase):
         send.assert_called_once_with(2, 'Добавлено в очередь: 2.')
         wake.assert_called_once()
 
-    def test_worker_processes_batch_in_order(self):
+    def test_workers_process_each_job_once(self):
         db.enqueue_telegram_urls('wallet', ['https://example.com/a', 'https://example.com/b', 'https://example.com/c'], 7, 71)
         seen = []
         def process(entry_id):
@@ -105,10 +105,35 @@ class QueueTests(unittest.TestCase):
                     time.sleep(0.01)
             finally:
                 worker.stop()
-                worker._thread.join(timeout=5)
-        self.assertEqual(seen, sorted(seen))
+                for thread in worker._threads:
+                    thread.join(timeout=5)
+        self.assertEqual(len(set(seen)), 3)
         self.assertEqual(len(seen), 3)
         self.assertTrue(all(db.get_entry(i)['job_state'] == 'done' for i in seen))
+
+    def test_slow_job_does_not_block_queue(self):
+        import threading
+        db.enqueue_telegram_urls('wallet', ['https://example.com/slow', 'https://example.com/fast'], 7, 72)
+        started = threading.Event()
+        release = threading.Event()
+        finished_fast = threading.Event()
+        def process(entry_id):
+            if entry_id == 1:
+                started.set()
+                release.wait(5)
+            else:
+                finished_fast.set()
+            db.update_entry(entry_id, status='done', transcript='ok')
+        with patch.object(worker.pipeline, 'process_entry', side_effect=process), patch.object(worker, 'notify'):
+            worker.start()
+            try:
+                self.assertTrue(started.wait(2))
+                self.assertTrue(finished_fast.wait(2))
+            finally:
+                release.set()
+                worker.stop()
+                for thread in worker._threads:
+                    thread.join(timeout=5)
 
     def test_uploaded_media_checkpoint(self):
         saved = []

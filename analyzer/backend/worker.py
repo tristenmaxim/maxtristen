@@ -9,8 +9,9 @@ import telegram
 log = logging.getLogger(__name__)
 _wake = threading.Event()
 _stop = threading.Event()
-_thread = None
+_threads = []
 MAX_ATTEMPTS = 3
+WORKERS = 2
 
 
 def notify(chat_id, text, entry_id=None):
@@ -61,13 +62,15 @@ def _run():
 
 
 def start():
-    global _thread
-    if _thread and _thread.is_alive():
+    global _threads
+    if any(thread.is_alive() for thread in _threads):
         return
     db.recover_jobs()
     _stop.clear()
-    _thread = threading.Thread(target=_run, name='analyzer-queue', daemon=True)
-    _thread.start()
+    _threads = [threading.Thread(target=_run, name=f'analyzer-queue-{i}', daemon=True)
+                for i in range(WORKERS)]
+    for thread in _threads:
+        thread.start()
 
 
 def wake():
