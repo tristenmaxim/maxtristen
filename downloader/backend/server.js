@@ -202,12 +202,22 @@ function downloadVideo(finalUrl, videoId) {
       "--print",
       "after_move:%(filepath)s",
       "--progress",
-      finalUrl,
     ];
+
+    // Keep account cookies outside the repo and only use them for YouTube.
+    const hostname = new URL(finalUrl).hostname;
+    const isYouTube = hostname === "youtu.be" || hostname === "youtube.com" || hostname.endsWith(".youtube.com");
+    if (isYouTube && process.env.YTDLP_COOKIES_FILE) {
+      fs.accessSync(process.env.YTDLP_COOKIES_FILE, fs.constants.R_OK);
+      args.push("--cookies", process.env.YTDLP_COOKIES_FILE);
+    }
+    args.push("--", finalUrl);
 
     const proc = spawn("yt-dlp", args);
     let finalPath = "";
     let errBuf = "";
+
+    proc.on("error", reject);
 
     proc.stdout.on("data", (chunk) => {
       const lines = chunk.toString().trim().split('\n');

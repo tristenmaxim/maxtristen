@@ -38,7 +38,7 @@ cd photo/backend && python3 -m venv venv && venv/bin/pip install -r requirements
 cp .env.example .env  # вписать OPENROUTER_API_KEY
 venv/bin/uvicorn main:app --reload --port 8001
 
-# downloader (нужен yt-dlp и ffmpeg в PATH)
+# downloader (нужны ffmpeg, Deno >= 2.3 и yt-dlp[default] в PATH)
 cd downloader/backend && npm install
 PORT=8003 node server.js
 
@@ -49,3 +49,11 @@ venv/bin/uvicorn main:app --reload --port 8004
 
 # music — статика, открыть music/index.html или python3 -m http.server
 ```
+
+Для YouTube `yt-dlp[default]` устанавливает EJS, а Deno выполняет JS-проверки.
+Если YouTube требует вход, cookies в формате Netscape хранятся только на сервере:
+`/opt/maxtristen-data/downloader/youtube-cookies.txt` (права `600`). В файле
+`/opt/maxtristen-data/downloader/downloader.env` задаётся
+`YTDLP_COOKIES_FILE=/opt/maxtristen-data/downloader/youtube-cookies.txt`;
+после обновления env нужен `systemctl restart maxtristen-downloader`.
+Cookies подключаются только к ссылкам YouTube и не затрагиваются деплоем.

@@ -46,10 +46,16 @@ jobs:
             venv/bin/pip install -q -r requirements.txt
             cd /opt/maxtristen
 
-            # downloader backend: node deps + yt-dlp impersonation support
+            # downloader backend: yt-dlp, YouTube JS challenges, impersonation
             cd downloader/backend
             npm ci --omit=dev
-            python3 -m pip install -q -U --break-system-packages yt-dlp curl_cffi
+            python3 -m pip install -q -U --break-system-packages "yt-dlp[default]" curl_cffi
+            if ! command -v deno >/dev/null; then
+              curl -fsSL https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip -o /tmp/maxtristen-deno.zip
+              python3 -m zipfile -e /tmp/maxtristen-deno.zip /usr/local/bin
+              chmod 755 /usr/local/bin/deno
+            fi
+            deno --version
             cd /opt/maxtristen
 
             # analyzer backend: venv + deps

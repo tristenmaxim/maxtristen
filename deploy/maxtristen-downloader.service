@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/maxtristen/downloader/backend
 Environment=PORT=8003
+EnvironmentFile=-/opt/maxtristen-data/downloader/downloader.env
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
 RestartSec=3
