@@ -1,0 +1,62 @@
+{
+  "units": "mm",
+  "sheet_thickness": 5.0,
+  "inside_radius": 10.0,
+  "k_factor_assumed": 0.4,
+  "bend_allowance_per_90": 18.84955592153876,
+  "upper_blank_length": 1187.6991118430776,
+  "lower_blank_length": 1315.398223686155,
+  "blank_depth": 580.0,
+  "upper_bend_centres": [
+    244.42477796076938,
+    943.2743338823082
+  ],
+  "lower_bend_centres": [
+    89.42477796076938,
+    308.27433388230816,
+    1007.1238898038469,
+    1225.9734457253858
+  ],
+  "coincident_plate_holes": [
+    [
+      -250,
+      -200
+    ],
+    [
+      -250,
+      200
+    ],
+    [
+      250,
+      -200
+    ],
+    [
+      250,
+      200
+    ]
+  ],
+  "foot_holes": [
+    [
+      -400,
+      -220
+    ],
+    [
+      -400,
+      220
+    ],
+    [
+      400,
+      -220
+    ],
+    [
+      400,
+      220
+    ]
+  ],
+  "upper_valid": true,
+  "lower_valid": true,
+  "upper_solids": 1,
+  "lower_solids": 1,
+  "overlap_volume_mm3": 0.0,
+  "caution": "PRELIMINARY ONLY; bend compensation, alloys, fasteners, back support and structural integrity NOT confirmed"
+}
