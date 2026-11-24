@@ -301,8 +301,7 @@ async def enhance_image(
             response = client.chat.completions.create(
                 model=model_id,
                 messages=messages,
-                modalities=["image", "text"],
-                max_tokens=1000
+                modalities=["image", "text"]
             )
             logger.info("Received response from OpenRouter API")
         except openai.BadRequestError as e:
@@ -511,8 +510,7 @@ async def enhance_image_multi(
             api_params = {
                 "model": model_id,
                 "messages": messages,
-                "modalities": ["image", "text"],
-                "max_tokens": 1000
+                "modalities": ["image", "text"]
             }
 
             # Add seed if provided (for variation control)
