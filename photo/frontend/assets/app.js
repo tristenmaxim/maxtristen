@@ -4,6 +4,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const originalButtonText = submitButton.textContent;
     const fileInput = document.getElementById('file-upload');
     const dropZone = form.querySelector('.drop-zone');
+    const modelSelect = document.getElementById('model');
+    const modelStatus = document.getElementById('modelStatus');
+    const retryModels = document.getElementById('retryModels');
+    async function loadModels() {
+        modelSelect.disabled = true;
+        submitButton.disabled = true;
+        retryModels.hidden = true;
+        modelStatus.textContent = 'Загружаем модели OpenRouter…';
+        try {
+            const response = await fetch('api/models');
+            if (!response.ok) throw new Error();
+            const models = await response.json();
+            if (!models.length) throw new Error();
+            modelSelect.replaceChildren(...models.map(model => new Option(model.name, model.id)));
+            const preferred = 'openai/gpt-5-image-mini';
+            if (models.some(model => model.id === preferred)) modelSelect.value = preferred;
+            modelSelect.disabled = false;
+            submitButton.disabled = false;
+            modelStatus.textContent = `Доступно моделей: ${models.length}. Список обновляется автоматически.`;
+        } catch (error) {
+            modelSelect.replaceChildren(new Option('Модели недоступны', ''));
+            modelStatus.textContent = 'Не удалось загрузить модели. Попробуйте ещё раз.';
+            retryModels.hidden = false;
+        }
+    }
+    retryModels.addEventListener('click', loadModels);
+    loadModels();
     let originalImageUrl = null;
     
     // Image constraints
@@ -332,4 +359,4 @@ document.addEventListener('DOMContentLoaded', function() {
             fileInput.dispatchEvent(event);
         }
     }
-}); 
+});

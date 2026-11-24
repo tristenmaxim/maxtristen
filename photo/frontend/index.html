@@ -42,17 +42,11 @@
 
             <div class="field">
                 <label for="model" class="field-label">Модель для генерации</label>
-                <select id="model" name="model" class="input">
-                    <optgroup label="Google Models">
-                        <option value="gemini-3-pro">Google Gemini 3 Pro Image (самая продвинутая от Google)</option>
-                        <option value="gemini-2.5-flash">Google Gemini 2.5 Flash Image (быстрая)</option>
-                        <option value="gemini-2.5-flash-preview">Google Gemini 2.5 Flash Preview — "Nano Banana"</option>
-                    </optgroup>
-                    <optgroup label="OpenAI Models">
-                        <option value="gpt-5-mini" selected>OpenAI GPT-5 Image Mini (рекомендуется, быстрая)</option>
-                        <option value="gpt-5">OpenAI GPT-5 Image (самая продвинутая от OpenAI)</option>
-                    </optgroup>
+                <select id="model" name="model" class="input" disabled>
+                    <option>Загрузка моделей…</option>
                 </select>
+                <p id="modelStatus" class="field-hint" aria-live="polite"></p>
+                <button id="retryModels" type="button" class="btn-secondary" hidden>Повторить загрузку</button>
             </div>
 
             <div class="field">
@@ -87,7 +81,7 @@
             </div>
 
             <div class="submit-row">
-                <button type="submit" class="btn-primary">Обработать изображение</button>
+                <button type="submit" class="btn-primary" disabled>Обработать изображение</button>
             </div>
         </form>
 
@@ -116,6 +110,6 @@
             </div>
         </div>
     </div>
-    <script src="assets/app.js"></script>
+    <script src="assets/app.js?v=2"></script>
 </body>
 </html>

@@ -14,6 +14,9 @@ import logging
 import traceback
 import datetime
 import random
+import asyncio
+import time
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -35,13 +38,51 @@ client = openai.OpenAI(
 )
 
 # Available image generation models
-IMAGE_MODELS = {
+LEGACY_IMAGE_MODELS = {
     "gemini-3-pro": "google/gemini-3-pro-image-preview",
     "gemini-2.5-flash": "google/gemini-2.5-flash-image",
     "gemini-2.5-flash-preview": "google/gemini-2.5-flash-image-preview",
     "gpt-5-mini": "openai/gpt-5-image-mini",
     "gpt-5": "openai/gpt-5-image"
 }
+
+_models_cache = []
+_models_cached_at = 0
+
+def get_image_models():
+    global _models_cache, _models_cached_at
+    if _models_cache and time.monotonic() - _models_cached_at < 3600:
+        return _models_cache
+    try:
+        response = requests.get(
+            "https://openrouter.ai/api/v1/models",
+            params={"output_modalities": "image"},
+            headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        models = [
+            {"id": item["id"], "name": item.get("name") or item["id"]}
+            for item in response.json()["data"]
+            if "image" in (item.get("architecture") or {}).get("input_modalities", [])
+            and "image" in (item.get("architecture") or {}).get("output_modalities", [])
+        ]
+        if not models:
+            raise ValueError("No compatible image models returned")
+        _models_cache = models
+        _models_cached_at = time.monotonic()
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        logger.warning("Could not refresh image models: %s", e)
+        if not _models_cache:
+            raise HTTPException(status_code=503, detail="Не удалось загрузить модели OpenRouter. Попробуйте позже.")
+    return _models_cache
+
+async def resolve_image_model(model):
+    model_id = LEGACY_IMAGE_MODELS.get(model, model)
+    models = await asyncio.to_thread(get_image_models)
+    if model_id not in {item["id"] for item in models}:
+        raise HTTPException(status_code=400, detail="Модель недоступна. Обновите страницу и выберите другую.")
+    return model_id
 
 # Test OpenRouter API key at startup
 def validate_openrouter_key():
@@ -61,6 +102,10 @@ SUPPORTED_SIZES = [(1024, 1024), (1024, 1536), (1536, 1024)]  # For gpt-image-1
 MAX_DIMENSION = 1536  # Maximum dimension allowed
 
 app = FastAPI()
+
+@app.get("/api/models")
+async def list_image_models():
+    return await asyncio.to_thread(get_image_models)
 
 # Add CORS middleware
 app.add_middleware(
@@ -193,15 +238,7 @@ async def enhance_image(
 ):
     temp_filename = None  # Initialize to track temp file for cleanup
 
-    # Validate model
-    if model not in IMAGE_MODELS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid model: {model}. Supported models: {', '.join(IMAGE_MODELS.keys())}"
-        )
-
-    # Get the full model ID for OpenRouter
-    model_id = IMAGE_MODELS[model]
+    model_id = await resolve_image_model(model)
 
     # Валидные значения для size и quality
     VALID_SIZES = {"1024x1024", "1536x1024", "1024x1536", "auto"}
@@ -419,14 +456,7 @@ async def enhance_image_multi(
     temp_filenames = []
 
     try:
-        # Validate model
-        if model not in IMAGE_MODELS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid model: {model}. Supported models: {', '.join(IMAGE_MODELS.keys())}"
-            )
-
-        model_id = IMAGE_MODELS[model]
+        model_id = await resolve_image_model(model)
 
         # Validate parameters
         VALID_SIZES = {"1024x1024", "1536x1024", "1024x1536", "auto"}
@@ -599,7 +629,9 @@ async def enhance_image_multi(
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
     finally:
         # Always clean up temporary file
-        if temp_filename and os.path.exists(temp_filename):
+        for temp_filename in temp_filenames:
+            if not os.path.exists(temp_filename):
+                continue
             try:
                 os.remove(temp_filename)
                 logger.info(f"Cleaned up temporary file: {temp_filename}")
