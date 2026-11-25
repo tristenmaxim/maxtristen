@@ -71,7 +71,7 @@ pad=roundbox('Backrest leather',(0,251,562),(620,38,200),leather,18)
 pad.rotation_euler.x=math.radians(-10)
 # S-shaped strips from back panel toward arm beams, in plan view, rounded bends.
 def bracket(side):
- path=rounded_path([(side*321,267),(side*350,267),(side*350,211),(side*385,211)],14,8);n=len(path)
+ path=rounded_path([(side*321,267),(side*344,267),(side*344,211),(side*340,211)],14,8);n=len(path)
  verts=[(v.x*S,v.y*S,z*S) for z in (505,594) for v in path]
  faces=[(i,i+1,n+i+1,n+i) for i in range(n-1)]
  me=bpy.data.meshes.new('Bent rear connector');me.from_pydata(verts,[],faces);me.update();o=bpy.data.objects.new(('Left' if side<0 else 'Right')+' bent rear connector',me);bpy.context.collection.objects.link(o);o.data.materials.append(metal)

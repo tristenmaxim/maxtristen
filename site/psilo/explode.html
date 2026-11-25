@@ -24,7 +24,7 @@ try{
  camera=new THREE.PerspectiveCamera(35,1,.01,100);camera.position.set(-1.65,1.35,2.45);controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.4,0);controls.enableDamping=true;controls.minDistance=.8;controls.maxDistance=8;controls.maxPolarAngle=Math.PI*.53;controls.update();
  const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-2,4,3);scene.add(light);const fill=new THREE.DirectionalLight(0xffffff,1);fill.position.set(2,3,-2);scene.add(fill);
  const resize=()=>{const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(stage);resize();
- new GLTFLoader().load('cad/psilo-concept.glb?v=2',gltf=>{
+ new GLTFLoader().load('cad/psilo-concept.glb?v=3',gltf=>{
   model=gltf.scene;scene.add(model);
   model.traverse(o=>{if(!o.isMesh)return;let node=o;while(node.parent&&node.parent!==model)node=node.parent;const group=groups.find(g=>g.match(node.name));if(!group)return;const d=typeof group.delta==='function'?group.delta(node.name):group.delta;pieces.push({node,group,start:node.position.clone(),delta:new THREE.Vector3(...d)});});
   if(!pieces.length){status.textContent='Не удалось определить детали модели.';return}
